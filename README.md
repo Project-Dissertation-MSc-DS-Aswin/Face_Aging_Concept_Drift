@@ -1,5 +1,29 @@
 # Face Aging Concept Drift
 
+### FOLDER STRUCTURE
+
+|   LICENSE
+|   README.md
+|
++---images
+|       decision_model.png
+|       drift_metric.png
+|
+\---src
+    |   constants.py
+    |   dataloaders.py
+    |   datasets.py
+    |
+    +---aws
+    |       boto3_api.py
+    |       credentials.ini
+    |       credentials.rar
+    |
+    \---dataset_meta
+            AgeDB_metadata.mat
+            celebrity2000_meta.mat
+            FGNET_metadata.mat
+
 # **Introduction**
 
 Concept Drift is a phenomenon through which models decay over time and show ambiguous results on Machine Learning inference. The models may decay because they have used a restricted dataset which may not contain all the necessary feature representations and encodings. Concept Drift is observed in the target labels of the data and occurs due to a change in the underlying data distribution, change in data over time and changes in the predicted output due to a change of methods of data collection. 
