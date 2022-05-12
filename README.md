@@ -2,48 +2,30 @@
 
 ### FOLDER STRUCTURE
 
+```
 |   LICENSE
-
 |   README.md
-
 |
-
 +---images
-
 |       decision_model.png
-
 |       drift_metric.png
-
 |
-
 \---src
-
     |   constants.py
-
     |   dataloaders.py
-
     |   datasets.py
-
     |
-
     +---aws
-
     |       boto3_api.py
-
     |       credentials.ini
-
     |       credentials.rar
-
     |
-
     \---dataset_meta
 
             AgeDB_metadata.mat
-
             celebrity2000_meta.mat
-
             FGNET_metadata.mat
-            
+```
 
 # **Introduction**
 
