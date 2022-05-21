@@ -9,19 +9,23 @@ CACD2000 DataGenerator
 """
 class CACD2000Dataset(DataGenerator):
   
-  def __init__(self, iterator, logger, metadata_file, 
-               list_IDs, batch_size=64, dim=(72*72), n_channels=1, n_classes=2, shuffle=True, valid=False):
+  def __init__(self, logger, metadata_file, 
+               list_IDs, color_mode='grayscale', augmentation_generator=None, data_dir=None, batch_size=64, dim=(72*72), n_channels=1, n_classes=2, shuffle=True, valid=False):
     self.logger = logger
-    self.iterator = iterator
     self.metadata_file = metadata_file
     
-    self.logger.log(self.opt.__dict__())
-    
-    super(CACD2000Dataset).__init__(self, list_IDs, batch_size=64, dim=(72*72), n_channels=1,
+    super(CACD2000Dataset, self).__init__(list_IDs, batch_size=64, dim=(72*72), n_channels=1,
                  n_classes=2, shuffle=True, valid=False)
     
     self.metadata = self.load_dataset(metadata_file)
     self.mapping = self.load_identity_mapping(self.metadata)
+    
+    self.color_mode = color_mode
+    self.batch_size = batch_size
+    self.data_dir = data_dir
+    self.augmentation_generator = augmentation_generator
+    
+    self.iterator = self.get_iterator(color_mode, batch_size, data_dir, augmentation_generator, x_col='filename', y_col='identity')
   
   """
   Loads the metadata of the dataset
@@ -39,6 +43,10 @@ class CACD2000Dataset(DataGenerator):
     metadata_CACD['year'] = metadata_CACD['year'].astype(int)
     return metadata_CACD
   
+  def set_metadata(self, metadata):
+    self.metadata = metadata
+    self.iterator = self.get_iterator(self.color_mode, self.batch_size, self.data_dir, self.augmentation_generator)
+  
   """
   Identities
   """
@@ -50,31 +58,8 @@ class CACD2000Dataset(DataGenerator):
   def __len__(self):
     return len(self.iterator)
   
-  def __data_generation(self, list_IDs_temp):
-    'Generates data containing batch_size samples' # X : (n_samples, *dim, n_channels)
-    # Initialization
-    X = np.empty((self.batch_size, *self.dim))
-    y = np.empty((self.batch_size, self.num_classes))
-
-    # Generate data
-    for i, ID in enumerate(list_IDs_temp):
-      x1 = self.iterator[ID]
-      # Store sample
-      identity = self.metadata['identity'].loc[ID]
-      y[i] = (self.mapping == identity).astype(int)
-
-    return X, y
-  
   def next(self, list_IDs_temp):
     return self.__data_generation(list_IDs_temp)
-
-  def __getitem__(self, i):
-    x1 = self.iterator[i]
-    # Store sample
-    y = self.metadata['identity'].values[i]
-    
-    return x1, y
-    
 
 """
 AgeDBDataset DataGenerator
@@ -82,19 +67,23 @@ Reference: https://stanford.edu/~shervine/blog/keras-how-to-generate-data-on-the
 """
 class AgeDBDataset(DataGenerator):
   
-  def __init__(self, iterator, logger, metadata_file, 
-               list_IDs, batch_size=64, dim=(72*72), n_channels=1, n_classes=2, shuffle=True, valid=False):
+  def __init__(self, logger, metadata_file, 
+               list_IDs, color_mode='grayscale', augmentation_generator=None, data_dir=None, batch_size=64, dim=(72*72), n_channels=1, n_classes=2, shuffle=True, valid=False):
     self.logger = logger
-    self.iterator = iterator
     self.metadata_file = metadata_file
     
-    self.logger.log(self.opt.__dict__())
-    
-    super(AgeDBDataset).__init__(self, list_IDs, batch_size=64, dim=(72*72), n_channels=1,
+    super(AgeDBDataset, self).__init__(list_IDs, batch_size=64, dim=(72*72), n_channels=1,
                  n_classes=2, shuffle=True, valid=False)
     
     self.metadata = self.load_dataset(metadata_file)
     self.mapping = self.load_name_mapping(self.metadata)
+    
+    self.color_mode = color_mode
+    self.batch_size = batch_size
+    self.data_dir = data_dir
+    self.augmentation_generator = augmentation_generator
+    
+    self.iterator = self.get_iterator(color_mode, batch_size, data_dir, augmentation_generator, x_col='filename', y_col='name')
 
   """
   Loads the metadata of the dataset
@@ -103,12 +92,22 @@ class AgeDBDataset(DataGenerator):
   def load_dataset(self, metadata_file):
     mat = scipy.io.loadmat(metadata_file)
     self.logger.log({constants.INFO: "Dataset/Metadata successfully loaded"})
-    fileno, filename, name, age, gender = mat['fileno'], mat['filename'], mat['name'], mat['age'], mat['gender']
-    metadata_array = np.concatenate([fileno, filename, name, age, gender], axis=1)
-    metadata = pd.DataFrame(np.array(metadata_array), columns=['fileno', 'filename', 'name', 'age', 'gender'])
-    metadata['age'] = metadata['age'].astype(np.int)
-    metadata['fileno'] = metadata['fileno'].astype(np.int)
-    return metadata
+    fileno = list(map(lambda x: x[0], mat['fileno'][0]))
+    filename = list(map(lambda x: x[0], mat['filename'][0]))
+    name = list(map(lambda x: x[0], mat['name'][0]))
+    age = list(map(lambda x: x[0], mat['age'][0]))
+    gender = list(map(lambda x: x[0], mat['gender'][0]))
+    metadata_agedb = pd.DataFrame(np.stack([fileno, filename, name, age, gender]).T, 
+                                  columns=['fileno', 'filename', 'name', 'age', 'gender'])
+    metadata_agedb['age'] = metadata_agedb['age'].astype(np.int)
+    metadata_agedb['fileno'] = metadata_agedb['fileno'].astype(np.int)
+    metadata_agedb['name'] = metadata_agedb['name'].astype(np.str)
+    metadata_agedb['filename'] = metadata_agedb['filename'].astype(np.str)
+    return metadata_agedb
+  
+  def set_metadata(self, metadata):
+    self.metadata = metadata
+    self.iterator = self.get_iterator(self.color_mode, self.batch_size, self.data_dir, self.augmentation_generator)
   
   """
   Identities
@@ -121,49 +120,31 @@ class AgeDBDataset(DataGenerator):
   def __len__(self):
     return len(self.iterator)
   
-  def __data_generation(self, list_IDs_temp):
-    'Generates data containing batch_size samples' # X : (n_samples, *dim, n_channels)
-    # Initialization
-    X = np.empty((self.batch_size, *self.dim))
-    y = np.empty((self.batch_size, self.num_classes))
-
-    # Generate data
-    for i, ID in enumerate(list_IDs_temp):
-      x1 = self.iterator[ID]
-      # Store sample
-      name = self.metadata['name'].loc[ID]
-      y[i] = (self.mapping == name).astype(int)
-
-    return X, y
-  
   def next(self, list_IDs_temp):
     return self.__data_generation(list_IDs_temp)
-
-  def __getitem__(self, i):
-    x1 = self.iterator[i]
-    # Store sample
-    y = self.metadata['name'].values[i]
-    
-    return x1, y
 
 """
 FGNETDataset DataGenerator
 """
 class FGNETDataset(DataGenerator):
   
-  def __init__(self, iterator, logger, metadata_file, 
-               list_IDs, batch_size=64, dim=(72*72), n_channels=1, n_classes=2, shuffle=True, valid=False):
+  def __init__(self, logger, metadata_file, 
+               list_IDs, color_mode='grayscale', augmentation_generator=None, data_dir=None, batch_size=64, dim=(72*72), n_channels=1, n_classes=2, shuffle=True, valid=False):
     self.logger = logger
-    self.iterator = iterator
     self.metadata_file = metadata_file
     
-    self.logger.log(self.opt.__dict__())
-    
-    super(FGNETDataset).__init__(self, list_IDs, batch_size=64, dim=(72*72), n_channels=1,
+    super(FGNETDataset, self).__init__(list_IDs, batch_size=64, dim=(72*72), n_channels=1,
                  n_classes=2, shuffle=True, valid=False)
     
     self.metadata = self.load_dataset(metadata_file)
     self.mapping = self.load_name_mapping(self.metadata)
+    
+    self.color_mode = color_mode
+    self.batch_size = batch_size
+    self.data_dir = data_dir
+    self.augmentation_generator = augmentation_generator
+    
+    self.iterator = self.get_iterator(color_mode, batch_size, data_dir, augmentation_generator, x_col='filename', y_col='fileno')
     
   """
   Loads the metadata of the dataset
@@ -183,6 +164,10 @@ class FGNETDataset(DataGenerator):
     
     return metadata_fgnet
   
+  def set_metadata(self, metadata):
+    self.metadata = metadata
+    self.iterator = self.get_iterator(self.color_mode, self.batch_size, self.data_dir, self.augmentation_generator)
+  
   """
   Identities
   """
@@ -193,28 +178,3 @@ class FGNETDataset(DataGenerator):
   
   def __len__(self):
     return len(self.iterator)
-  
-  def __data_generation(self, list_IDs_temp):
-    'Generates data containing batch_size samples' # X : (n_samples, *dim, n_channels)
-    # Initialization
-    X = np.empty((self.batch_size, *self.dim))
-    y = np.empty((self.batch_size, self.num_classes))
-
-    # Generate data
-    for i, ID in enumerate(list_IDs_temp):
-      x1 = self.iterator[ID]
-      # Store sample
-      fileno = self.metadata['fileno'].loc[ID]
-      y[i] = (self.mapping == fileno).astype(int)
-
-    return X, y
-  
-  def next(self, list_IDs_temp):
-    return self.__data_generation(list_IDs_temp)
-
-  def __getitem__(self, i):
-    x1 = self.iterator[i]
-    # Store sample
-    y = self.metadata['fileno'].values[i]
-    
-    return x1, y
