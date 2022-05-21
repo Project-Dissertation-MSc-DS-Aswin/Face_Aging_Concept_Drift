@@ -113,7 +113,7 @@ The project consists of experiments and pipelines
 
 1. Experiments: Experiments help collect primary data from a model or service
 
-2. Pipelines: Pipelines consist of 1 or more experiments with a logger name prefix and they are executed in a command line environment or with a frontend
+2. Pipelines: Pipelines consist of 1 or more experiments with a logger name prefix and they are executed in a command line environment, with a frontend or programatically
 
 ## **Project Pipelines**
 
@@ -125,3 +125,6 @@ The project consists of experiments and pipelines
 
 ![./images/facenet_with_aging.png](./images/facenet_with_aging.png)
 
+### 3 FaceRecogWithGAN
+
+![./images/drift_detection_and_adaptation.png](./images/drift_detection_and_adaptation.png)
