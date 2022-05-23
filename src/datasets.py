@@ -23,10 +23,10 @@ class CACD2000Dataset(DataGenerator):
     self.color_mode = color_mode
     self.batch_size = batch_size
     self.data_dir = data_dir
-    self.augmentation_generator = augmentation_generator
-    
-    self.iterator = self.get_iterator(color_mode, batch_size, data_dir, augmentation_generator, x_col='filename', y_col='identity')
-  
+
+    if self.augmentation_generator:
+      self.augmentation_generator = augmentation_generator
+
   """
   Loads the metadata of the dataset
   returns: pd.DataFrame
@@ -82,8 +82,9 @@ class AgeDBDataset(DataGenerator):
     self.batch_size = batch_size
     self.data_dir = data_dir
     self.augmentation_generator = augmentation_generator
-    
-    self.iterator = self.get_iterator(color_mode, batch_size, data_dir, augmentation_generator, x_col='filename', y_col='name')
+
+    if self.augmentation_generator:
+      self.augmentation_generator = augmentation_generator
 
   """
   Loads the metadata of the dataset
@@ -137,14 +138,16 @@ class FGNETDataset(DataGenerator):
                  n_classes=2, shuffle=True, valid=False)
     
     self.metadata = self.load_dataset(metadata_file)
-    self.mapping = self.load_name_mapping(self.metadata)
+    self.mapping = self.load_identity_mapping(self.metadata)
     
     self.color_mode = color_mode
     self.batch_size = batch_size
     self.data_dir = data_dir
     self.augmentation_generator = augmentation_generator
     
-    self.iterator = self.get_iterator(color_mode, batch_size, data_dir, augmentation_generator, x_col='filename', y_col='fileno')
+    if self.augmentation_generator:
+      self.augmentation_generator = augmentation_generator
+      self.iterator = self.get_iterator(color_mode, batch_size, data_dir, augmentation_generator, x_col='filename', y_col='fileno')
     
   """
   Loads the metadata of the dataset
