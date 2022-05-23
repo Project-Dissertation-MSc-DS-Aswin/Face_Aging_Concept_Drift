@@ -14,7 +14,7 @@ class CACD2000Dataset(DataGenerator):
     self.logger = logger
     self.metadata_file = metadata_file
     
-    super(CACD2000Dataset, self).__init__(list_IDs, batch_size=64, dim=(72*72), n_channels=1,
+    super(CACD2000Dataset, self).__init__(list_IDs, batch_size=64, dim=(72,72), n_channels=1,
                  n_classes=2, shuffle=True, valid=False)
     
     self.metadata = self.load_dataset(metadata_file)
@@ -45,7 +45,7 @@ class CACD2000Dataset(DataGenerator):
   
   def set_metadata(self, metadata):
     self.metadata = metadata
-    self.iterator = self.get_iterator(self.color_mode, self.batch_size, self.data_dir, self.augmentation_generator)
+    self.iterator = self.get_iterator(self.color_mode, self.batch_size, self.data_dir, self.augmentation_generator, x_col='filename', y_col='identity')
   
   """
   Identities
@@ -58,9 +58,6 @@ class CACD2000Dataset(DataGenerator):
   def __len__(self):
     return len(self.iterator)
   
-  def next(self, list_IDs_temp):
-    return self.__data_generation(list_IDs_temp)
-
 """
 AgeDBDataset DataGenerator
 Reference: https://stanford.edu/~shervine/blog/keras-how-to-generate-data-on-the-fly
@@ -72,7 +69,7 @@ class AgeDBDataset(DataGenerator):
     self.logger = logger
     self.metadata_file = metadata_file
     
-    super(AgeDBDataset, self).__init__(list_IDs, batch_size=64, dim=(72*72), n_channels=1,
+    super(AgeDBDataset, self).__init__(list_IDs, batch_size=64, dim=(72,72), n_channels=1,
                  n_classes=2, shuffle=True, valid=False)
     
     self.metadata = self.load_dataset(metadata_file)
@@ -108,7 +105,7 @@ class AgeDBDataset(DataGenerator):
   
   def set_metadata(self, metadata):
     self.metadata = metadata
-    self.iterator = self.get_iterator(self.color_mode, self.batch_size, self.data_dir, self.augmentation_generator)
+    self.iterator = self.get_iterator(self.color_mode, self.batch_size, self.data_dir, self.augmentation_generator, x_col='filename', y_col='name')
   
   """
   Identities
@@ -121,9 +118,6 @@ class AgeDBDataset(DataGenerator):
   def __len__(self):
     return len(self.iterator)
   
-  def next(self, list_IDs_temp):
-    return self.__data_generation(list_IDs_temp)
-
 """
 FGNETDataset DataGenerator
 """
@@ -134,7 +128,7 @@ class FGNETDataset(DataGenerator):
     self.logger = logger
     self.metadata_file = metadata_file
     
-    super(FGNETDataset, self).__init__(list_IDs, batch_size=64, dim=(72*72), n_channels=1,
+    super(FGNETDataset, self).__init__(list_IDs, batch_size=64, dim=(72,72), n_channels=1,
                  n_classes=2, shuffle=True, valid=False)
     
     self.metadata = self.load_dataset(metadata_file)
@@ -169,7 +163,7 @@ class FGNETDataset(DataGenerator):
   
   def set_metadata(self, metadata):
     self.metadata = metadata
-    self.iterator = self.get_iterator(self.color_mode, self.batch_size, self.data_dir, self.augmentation_generator)
+    self.iterator = self.get_iterator(self.color_mode, self.batch_size, self.data_dir, self.augmentation_generator, x_col='filename', y_col='fileno')
   
   """
   Identities

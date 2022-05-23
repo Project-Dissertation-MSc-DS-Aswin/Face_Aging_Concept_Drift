@@ -3,6 +3,7 @@ import constants
 sys.path.append(constants.LATS_REPO)
 from keras.models import load_model
 from keras.preprocessing.image import ImageDataGenerator
+import skimage.transform
 
 def preprocess_data_facenet_without_aging(X_train):
   X_train = X_train.astype('float32')
@@ -22,10 +23,14 @@ def get_augmented_datasets():
 
 class KerasModelLoader:
   
-  def __init__(self, logger, model_path):
+  def __init__(self, logger, model_path, input_shape=None):
     self.logger = logger
     self.model_path = model_path
     self.type = 'keras'
+    (b, input_w, input_h, n_channels) = input_shape
+    self.input_w = input_w
+    self.input_h = input_h
+    self.input_shape = input_shape
   
   """
   Load the Keras Model from model_path
@@ -41,3 +46,6 @@ class KerasModelLoader:
   """
   def infer(self, data):
     return self.model.predict(data)
+  
+  def resize(self, data):
+    return skimage.transform.resize(data, (self.input_w, self.input_h))
