@@ -107,6 +107,8 @@ def get_reduced_metadata(args, dataset, seed=1000):
 if __name__ == "__main__":
 
     args = parse_args()
+    
+    mlflow.set_tracking_uri(args.tracking_uri)
 
     whylogs = logger.setup_logger(args.logger_name)
     model_loader = KerasModelLoader(whylogs, args.model, input_shape=(-1,160,160,3))
@@ -141,7 +143,6 @@ if __name__ == "__main__":
 
     choices_array = None
     offset_range = np.arange(2000, -2000, 500)
-    mlflow.set_tracking_uri(args.tracking_uri)
     if args.log_images == 's3':
 
         with mlflow.start_run():
@@ -171,22 +172,7 @@ if __name__ == "__main__":
                                    columns=['hash_sample', 'offset', 'true_identity', 'age', 'filename', 
                                    'y_pred', 'y_drift', 'euclidean', 'cosine', 'identity_grouping_distance'])
         
-        predictions_classes['TP'] = 0
-        predictions_classes.loc[(predictions_classes['y_pred'] == predictions_classes['true_identity']) & \
-                                (predictions_classes['true_identity'] == predictions_classes['y_drift']) & \
-                                (predictions_classes['y_pred'] == predictions_classes['y_drift']), 'TP'] = 1
-        predictions_classes['TN'] = 0
-        predictions_classes.loc[(predictions_classes['y_pred'] == predictions_classes['true_identity']) & \
-                                (predictions_classes['y_drift'] != predictions_classes['true_identity']) & \
-                                (predictions_classes['y_pred'] == predictions_classes['y_drift']), 'TN'] = 1
-        predictions_classes['FP'] = 0
-        predictions_classes.loc[(predictions_classes['y_pred'] == predictions_classes['true_identity']) & \
-                                (predictions_classes['y_drift'] != predictions_classes['true_identity']) & \
-                                (predictions_classes['y_pred'] != predictions_classes['y_drift']), 'FP'] = 1
-        predictions_classes['FN'] = 0
-        predictions_classes.loc[(predictions_classes['y_pred'] != predictions_classes['y_drift']) & \
-                                (predictions_classes['y_drift'] == predictions_classes['true_identity']) & \
-                                (predictions_classes['y_pred'] != predictions_classes['y_drift']), 'FN'] = 1
+        predictions_classes = experiment.calculate_confusion_matrix_elements(predictions_classes)
         
         recall = predictions_classes['TP'].sum() / (predictions_classes['TP'].sum() + predictions_classes['FN'].sum())
         precision = predictions_classes['TP'].sum() / (predictions_classes['TP'].sum() + predictions_classes['FP'].sum())

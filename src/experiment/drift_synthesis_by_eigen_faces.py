@@ -2,7 +2,7 @@ from re import M
 import numpy as np
 import pandas as pd
 import random
-import skimage
+import skimage.color
 import tensorflow as tf
 from tqdm import tqdm
 import matplotlib
@@ -258,3 +258,23 @@ class DriftSynthesisByEigenFacesExperiment:
                     )
                     
         return predictions_classes_array
+    
+    def calculate_confusion_matrix_elements(self, predictions_classes):
+        predictions_classes['TP'] = 0
+        predictions_classes.loc[(predictions_classes['y_pred'] == predictions_classes['true_identity']) & \
+                                (predictions_classes['true_identity'] == predictions_classes['y_drift']) & \
+                                (predictions_classes['y_pred'] == predictions_classes['y_drift']), 'TP'] = 1
+        predictions_classes['TN'] = 0
+        predictions_classes.loc[(predictions_classes['y_pred'] == predictions_classes['true_identity']) & \
+                                (predictions_classes['y_drift'] != predictions_classes['true_identity']) & \
+                                (predictions_classes['y_pred'] == predictions_classes['y_drift']), 'TN'] = 1
+        predictions_classes['FP'] = 0
+        predictions_classes.loc[(predictions_classes['y_pred'] == predictions_classes['true_identity']) & \
+                                (predictions_classes['y_drift'] != predictions_classes['true_identity']) & \
+                                (predictions_classes['y_pred'] != predictions_classes['y_drift']), 'FP'] = 1
+        predictions_classes['FN'] = 0
+        predictions_classes.loc[(predictions_classes['y_pred'] != predictions_classes['y_drift']) & \
+                                (predictions_classes['y_drift'] == predictions_classes['true_identity']) & \
+                                (predictions_classes['y_pred'] != predictions_classes['y_drift']), 'FN'] = 1
+        
+        return predictions_classes

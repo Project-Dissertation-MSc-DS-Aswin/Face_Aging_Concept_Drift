@@ -1,0 +1,14 @@
+torch
+torchvision
+numpy
+Pillow
+whylogs
+scipy
+pandas
+tqdm
+keras
+tensorflow
+scikit-learn
+opencv-python
+scikit-image
+mlflow
