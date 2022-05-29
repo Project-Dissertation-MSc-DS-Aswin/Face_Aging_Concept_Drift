@@ -87,4 +87,6 @@ if __name__ == "__main__":
   """
   embeddings = experiment.collect_data(args.data_collection_pkl, args.data_dir, args.batch_size)
     
-  result_distances = experiment.calculate_face_distance(embeddings)
+  result_euclidean_distances, result_cosine_similarities = experiment.calculate_face_distance(embeddings)
+
+  

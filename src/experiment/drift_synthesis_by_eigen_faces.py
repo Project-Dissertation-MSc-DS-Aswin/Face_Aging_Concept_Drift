@@ -278,3 +278,28 @@ class DriftSynthesisByEigenFacesExperiment:
                                 (predictions_classes['y_pred'] != predictions_classes['y_drift']), 'FN'] = 1
         
         return predictions_classes
+    
+    def plot_histogram_of_face_distances(self, predictions_classes):
+        
+        fig = plt.figure(figsize=(12,8))
+        plt.hist(predictions_classes['euclidean'], color='blue')
+        plt.hist(predictions_classes['cosine'], color='orange')
+        plt.xlabel("Distance (Cosine Similarity / Euclidean)")
+        plt.ylabel("Count")
+        
+        return fig
+    
+    def plot_scatter_of_drift_confusion_matrix(self, predictions_classes):
+        
+        fig = plt.figure(figsize=(12,8))
+        plt.scatter(predictions_classes.loc[(predictions_classes['TP'] != 1) & \
+                                    (predictions_classes['FN'] != 1), 'euclidean'], 
+            predictions_classes.loc[(predictions_classes['FN'] != 1) & \
+                  (predictions_classes['TP'] != 1), 'cosine'], c='orange', label='Other')
+        plt.scatter(predictions_classes.loc[predictions_classes['FN'] == 1, 'euclidean'], predictions_classes.loc[predictions_classes['FN'] == 1, 'cosine'], c='red', label='False Negative')
+        plt.scatter(predictions_classes.loc[predictions_classes['TP'] == 1, 'euclidean'], predictions_classes.loc[predictions_classes['TP'] == 1, 'cosine'], c='blue', label='True Positive')
+        plt.legend()
+        plt.xlabel("Euclidean Distance")
+        plt.ylabel("Cosine Similarity")
+        
+        return fig

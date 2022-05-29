@@ -145,57 +145,64 @@ if __name__ == "__main__":
     offset_range = np.arange(2000, -2000, 500)
     if args.log_images == 's3':
 
-        with mlflow.start_run():
-            
-            figures, choices_array = experiment.plot_images_with_eigen_faces(
-                images, images_demean, np.mean(images_bw.reshape(len(experiment_dataset.iterator), -1), axis=1), 
-                weights_vector, b_vector, offset_range, P_pandas, index
-            )
-            
-            hash_samples = np.unique(experiment.dataset.metadata['hash_sample'])
-            
-            # hash_sample
-            for ii, figure in enumerate(figures):
-                # offset range
-                for jj, (fig1, fig2, fig3) in enumerate(figure):
-                    mlflow.log_figure(fig1, """hash_sample_{1}/offset_{2}_{3}.png""".format(hash_samples[ii], str(jj), 'aging'))
-                    mlflow.log_figure(fig2, """hash_sample_{1}/offset_{2}_{3}.png""".format(hash_samples[ii], str(jj), 'actual'))
-                    mlflow.log_figure(fig3, """hash_sample_{1}/offset_{2}_{3}.png""".format(hash_samples[ii], str(jj), 'predicted'))
+        figures, choices_array = experiment.plot_images_with_eigen_faces(
+            images, images_demean, np.mean(images_bw.reshape(len(experiment_dataset.iterator), -1), axis=1), 
+            weights_vector, b_vector, offset_range, P_pandas, index
+        )
+        
+        hash_samples = np.unique(experiment.dataset.metadata['hash_sample'])
+        
+        # hash_sample
+        for ii, figure in enumerate(figures):
+            # offset range
+            for jj, (fig1, fig2, fig3) in enumerate(figure):
+                with mlflow.start_run():
+                    mlflow.log_figure(fig1, """{0}/hash_sample_{1}/offset_{2}_{3}.png""".format(args.logger_name, hash_samples[ii], str(jj), 'aging'))
+                    mlflow.log_figure(fig2, """{0}/hash_sample_{1}/offset_{2}_{3}.png""".format(args.logger_name, hash_samples[ii], str(jj), 'actual'))
+                    mlflow.log_figure(fig3, """{0}/hash_sample_{1}/offset_{2}_{3}.png""".format(args.logger_name, hash_samples[ii], str(jj), 'predicted'))
                 
+    predictions_classes_array = experiment.collect_drift_predictions(images, images_demean, np.mean(images_bw.reshape(len(experiment_dataset.iterator), -1), axis=1), 
+                                        weights_vector, b_vector, offset_range, P_pandas, index, 
+                                        args.classifier, model_loader, choices_array=choices_array)
+    
+    predictions_classes = pd.DataFrame(predictions_classes_array, 
+                                columns=['hash_sample', 'offset', 'true_identity', 'age', 'filename', 
+                                'y_pred', 'y_drift', 'euclidean', 'cosine', 'identity_grouping_distance'])
+    
+    for value in predictions_classes_array:
+        with mlflow.start_run():
+            mlflow.log_param(dict(zip(predictions_classes.columns.values.tolist(), value)))
+    
+    predictions_classes = experiment.calculate_confusion_matrix_elements(predictions_classes)
+    
+    recall = predictions_classes['TP'].sum() / (predictions_classes['TP'].sum() + predictions_classes['FN'].sum())
+    precision = predictions_classes['TP'].sum() / (predictions_classes['TP'].sum() + predictions_classes['FP'].sum())
+    accuracy = (predictions_classes['TP'].sum() + predictions_classes['TN'].sum()) / \
+    (predictions_classes['TP'].sum() + predictions_classes['TN'].sum() + predictions_classes['FP'].sum() + predictions_classes['FN'].sum())
+    f1 = 2 * recall * precision / (recall + precision)
+    print("""
+        Recall: {recall}, 
+        Precision: {precision}, 
+        F1: {f1},  
+        Accuracy: {accuracy}
+    """.format(
+        accuracy=accuracy, 
+        f1=f1, 
+        precision=precision, 
+        recall=recall
+    ))
+    
+    mlflow.log_metric("recall", recall)
+    mlflow.log_metric("precision", precision)
+    mlflow.log_metric("f1", f1)
+    mlflow.log_metric("accuracy", accuracy)
+    
+    predictions_classes.to_csv(args.drift_synthesis_filename)
+        
     with mlflow.start_run():
+        figure = experiment.plot_histogram_of_face_distances()
+        mlflow.log_figure(figure, "histogram_of_face_distances.png")
+        figure = experiment.plot_scatter_of_drift_confusion_matrix()
+        mlflow.log_figure(figure, "scatter_plot_of_drift_true_positives_false_negatives.png")
         
-        predictions_classes_array = experiment.collect_drift_predictions(images, images_demean, np.mean(images_bw.reshape(len(experiment_dataset.iterator), -1), axis=1), 
-                                            weights_vector, b_vector, offset_range, P_pandas, index, 
-                                            args.classifier, model_loader, choices_array=choices_array)
-        
-        predictions_classes = pd.DataFrame(predictions_classes_array, 
-                                   columns=['hash_sample', 'offset', 'true_identity', 'age', 'filename', 
-                                   'y_pred', 'y_drift', 'euclidean', 'cosine', 'identity_grouping_distance'])
-        
-        predictions_classes = experiment.calculate_confusion_matrix_elements(predictions_classes)
-        
-        recall = predictions_classes['TP'].sum() / (predictions_classes['TP'].sum() + predictions_classes['FN'].sum())
-        precision = predictions_classes['TP'].sum() / (predictions_classes['TP'].sum() + predictions_classes['FP'].sum())
-        accuracy = (predictions_classes['TP'].sum() + predictions_classes['TN'].sum()) / \
-        (predictions_classes['TP'].sum() + predictions_classes['TN'].sum() + predictions_classes['FP'].sum() + predictions_classes['FN'].sum())
-        f1 = 2 * recall * precision / (recall + precision)
-        print("""
-            Recall: {recall}, 
-            Precision: {precision}, 
-            F1: {f1},  
-            Accuracy: {accuracy}
-        """.format(
-            accuracy=accuracy, 
-            f1=f1, 
-            precision=precision, 
-            recall=recall
-        ))
-        
-        mlflow.log_metric("recall", recall)
-        mlflow.log_metric("precision", precision)
-        mlflow.log_metric("f1", f1)
-        mlflow.log_metric("accuracy", accuracy)
-        
-        predictions_classes.to_csv(args.drift_synthesis_filename)
-        
-        
+    

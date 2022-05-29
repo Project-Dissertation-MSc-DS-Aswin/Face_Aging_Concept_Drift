@@ -115,21 +115,34 @@ The project consists of experiments and pipelines
 
 2. Pipelines: Pipelines consist of 1 or more experiments with a logger name prefix and they are executed in a command line environment, with a frontend or programatically
 
-## **Project Pipelines**
+## **Project Implementation**
 
 ### 1. FaceNetWithoutAging
+
+- Experiment: [./src/experiment/facenet_without_aging.py](./src/experiment/facenet_without_aging.py)
+- Pipeline: [./src/pipeline/facenet_without_aging.py](./src/pipeline/facenet_without_aging.py)
+
+In this section, the euclidean and cosine distances are collected and plotted which are then saved using Mlflow. 
 
 ![./images/facenet_without_aging.png](./images/facenet_without_aging.png)
 
 ### 2. FaceNetWithAging
 
+- Experiment: [./src/experiment/facenet_with_aging.py](./src/experiment/facenet_with_aging.py)
+- Pipeline: [./src/pipeline/drift_synthesis_by_eigen_faces.py](./src/pipeline/drift_synthesis_by_eigen_faces.py)
+
+This section performs the aging using PCA eigen faces. 
+
 ![./images/facenet_with_aging.png](./images/facenet_with_aging.png)
 
-### 3 FaceRecogWithGAN
+### 3 FaceRecogWithEigenFaces
 
-![./images/drift_detection_and_adaptation.png](./images/drift_detection_and_adaptation.png)
+- Experiment: [./src/experiment/facenet_with_aging.py](./src/experiment/facenet_with_aging.py)
+- Pipeline: [./src/pipeline/drift_synthesis_by_eigen_faces.py](./src/pipeline/drift_synthesis_by_eigen_faces.py)
 
-### 4 FaceRecogWithEigenFaces
+- Eigen faces
+
+Eigen faces are obtained from the covariates of the images
 
 - Hashing the Samples based on Grouping Distance
 
@@ -137,11 +150,32 @@ In this section, the samples are assigned numbers sequentially that correspond t
 
 - Cutoff range
 
-In this section, the samples are assigned a cutoff range such that there is enough amount of samples in one group that correspond to the noise generated
+In this section, the samples are assigned a cutoff range such that there is enough amount of samples in one group that correspond to the noise generated. Such a table has been shown below. The hash_sample in the table identifies the data row grouping. 
 
-> Such a cutoff has been shown below:
+| Row Id | age | identity | **Hash_Sample** | **Grouping Distance** |
+|--------|-----|----------|-------------|-----------------------|
+| 1      | 56  | 2000     | 1           |        23.65              |
+| 2      | 43  | 21       | 1           |        1234.76              |
+| 3      | 56  | 34       | 2           |        98.56              |
+| 4      | 67  | 45       | 2           |        1.2              |
+| 5      | 43  | 668      | 3           |        0.004              |
+| 6      | 35  | 21       | 4           |        0.07              |
+
+This hash_sample has a **Grouping Distance** parameter for which the cutoff range is decided. 
+
+> Such a cutoff applied to the problem of eigen faces here has been shown below:
 
 ![./images/cutoff_range.png](./images/cutoff_range.png)
 
 ![./images/facerecog_with_eigen_faces.png](./images/facerecog_with_eigen_faces.png)
+
+### 4 FaceRecogWithGAN
+
+- Experiment1: [./src/experiment/facenet_with_gan_lats.py](./src/experiment/facenet_with_gan_lats.py)
+- Experiment2: [./src/experiment/facenet_with_gan_stylegan.py](./src/experiment/facenet_with_gan_stylegan.py)
+
+- Pipeline: [./src/pipeline/facenet_with_gan_lats.py](./src/pipeline/facenet_with_gan_lats.py)
+- Pipeline: [./src/pipeline/facenet_with_gan_stylegan.py](./src/pipeline/facenet_with_gan_stylegan.py)
+
+![./images/drift_detection_and_adaptation.png](./images/drift_detection_and_adaptation.png)
 

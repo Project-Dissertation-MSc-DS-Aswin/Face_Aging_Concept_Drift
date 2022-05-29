@@ -5,6 +5,7 @@ from experiment.model_loader import get_augmented_datasets, preprocess_data_face
 from evaluation.distance import cosine, euclidean, face_distance
 import tensorflow as tf
 from tqdm import tqdm
+from sklearn.metrics.pairwise import euclidean_distances, cosine_similarity
 
 def collect_data(model_loader, train_iterator):
   res_images = []
@@ -37,20 +38,13 @@ class FaceNetWithoutAgingExperiment:
     else:
       embeddings = collect_data(self.model_loader, self.dataset.iterator)
       
-    return embeddings
+    return tf.concat(embeddings, axis=0)
   
   def calculate_face_distance(self, embeddings):
-    m = embeddings.shape[0]
-    n = m**2
-    x = tf.Variable(tf.constant(list(range(n)), dtype=tf.int32))
-
-    result_distances = []
-    for ii, _x in tqdm(enumerate(x)):
-      result_distances.append(face_distance(ii, _x, embeddings))
-      
-    result_distances = tf.concat(result_distances, axis=0)
+    dist = euclidean_distances(embeddings)
+    similarity = cosine_similarity(embeddings)
     
-    return result_distances
+    return dist, similarity
 
   @property
   def get_list_IDs(self):
