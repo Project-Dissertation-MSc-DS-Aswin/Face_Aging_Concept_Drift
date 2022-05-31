@@ -1,9 +1,11 @@
 import sys
-import constants
-sys.path.append(constants.LATS_REPO)
 from keras.models import load_model
 from keras.preprocessing.image import ImageDataGenerator
 import skimage.transform
+from pipeline.context import Constants
+constants = Constants()
+
+sys.path.append(constants.LATS_REPO)
 
 def preprocess_data_facenet_without_aging(X_train):
   X_train = X_train.astype('float32')

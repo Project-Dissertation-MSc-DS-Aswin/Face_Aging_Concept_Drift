@@ -12,6 +12,7 @@ from experiment.model_loader import KerasModelLoader
 from experiment.model_loader import get_augmented_datasets, preprocess_data_facenet_without_aging
 from tqdm import tqdm
 from copy import copy
+import pickle
 
 def parse_args():
   parser = argparse.ArgumentParser()
@@ -39,6 +40,8 @@ def parse_args():
                       help='The name of the logger')
   parser.add_argument('--no_of_samples', type=int, default=2248,
                       help='The number of samples')
+  parser.add_argument('--no_of_pca_samples', type=int, default=2248,
+                      help='The number of samples')
   parser.add_argument('--colormode', type=str, default='color',
                       help='The type of colormode')
   parser.add_argument('--log_images', type=str, default='s3',
@@ -46,7 +49,7 @@ def parse_args():
   parser.add_argument('--tracking_uri', type=str, default='http://localhost:5000',
                       help='The uri to track mlflow with s3 or any other artifact root')
   parser.add_argument('--classifier', type=str, default=constants.AGEDB_FACE_CLASSIFIER,
-                      help='The uri to track mlflow with s3 or any other artifact root')
+                      help='The classifier pickle object which can detect the drift on synthetic based on ground truth data')
   parser.add_argument('--drift_synthesis_filename', type=str, default=constants.AGEDB_DRIFT_SYNTHESIS_EDA_CSV_FILENAME,
                       help='The filename to store with predictions classes')
   
@@ -73,24 +76,24 @@ def collect_images(train_iterator):
 def pca_covariates(images_cov):
     pca = PCA(n_components=images_cov.shape[0])
     X_pca = pca.fit_transform(images_cov)
-    return pca.components_.T, pca, X_pca
+    return pca.components_.T[:args.no_of_samples], pca, X_pca
 
-def load_dataset(args, whylogs):
+def load_dataset(args, whylogs, image_dim):
     dataset = None
     augmentation_generator = None
     if args.dataset == "agedb":
         augmentation_generator = get_augmented_datasets()
         dataset = AgeDBDataset(whylogs, args.metadata, list_IDs=list(range(args.no_of_samples)),
-                               color_mode='rgb', augmentation_generator=augmentation_generator, data_dir=args.data_dir, dim=(160,160))
+                               color_mode='rgb', augmentation_generator=augmentation_generator, data_dir=args.data_dir, dim=image_dim)
     elif args.dataset == "cacd":
         augmentation_generator = get_augmented_datasets()
         dataset = CACD2000Dataset(whylogs, args.metadata, list_IDs=list(range(args.no_of_samples)),
                                   color_mode='rgb', augmentation_generator=augmentation_generator,
-                                  data_dir=args.data_dir, dim=(160,160))
+                                  data_dir=args.data_dir, dim=image_dim)
     elif args.dataset == "fgnet":
         augmentation_generator = get_augmented_datasets()
         dataset = FGNETDataset(whylogs, args.metadata, list_IDs=None,
-                               color_mode='rgb', augmentation_generator=augmentation_generator, data_dir=args.data_dir, dim=(160,160))
+                               color_mode='rgb', augmentation_generator=augmentation_generator, data_dir=args.data_dir, dim=image_dim)
 
     return dataset, augmentation_generator
 
@@ -114,11 +117,15 @@ if __name__ == "__main__":
     model_loader = KerasModelLoader(whylogs, args.model, input_shape=(-1,160,160,3))
     model_loader.load_model()
 
-    dataset, augmentation_generator = load_dataset(args, whylogs)
-    experiment_dataset = copy(dataset)
+    dataset, augmentation_generator = load_dataset(args, whylogs, (48,48))
+    experiment_dataset = load_dataset(args, whylogs, (160,160))
+    
+    pca_args = copy(args)
+    pca_args.no_of_samples = pca_args.no_of_pca_samples
     dataset.set_metadata(
-        get_reduced_metadata(args, dataset)
+        get_reduced_metadata(pca_args, dataset)
     )
+    
     experiment_dataset.set_metadata(
         get_reduced_metadata(args, experiment_dataset, seed=2000)
     )
@@ -128,9 +135,11 @@ if __name__ == "__main__":
         images_new = demean_images(images_bw, len(dataset.iterator))
         images_cov = images_covariance(images_new, len(images_new))
         P, pca, X_pca = pca_covariates(images_cov)
+        
+        pickle.dump(pca, open(args.pca_covariates_pkl, "wb"))
 
     experiment = DriftSynthesisByEigenFacesExperiment(experiment_dataset, logger=logger, model_loader=model_loader, pca=pca,
-                                                      init_offset=11)
+                                                      init_offset=0)
 
     P_pandas = pd.DataFrame(P, columns=list(range(P.shape[1])))
     index = experiment.dataset.metadata['year'].reset_index()

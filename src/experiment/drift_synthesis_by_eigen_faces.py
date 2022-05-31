@@ -233,6 +233,18 @@ class DriftSynthesisByEigenFacesExperiment:
                     res1 = model_loader.infer(l2_normalize(prewhiten(output_image)).reshape(*model_loader.input_shape))
                     res2 = model_loader.infer(l2_normalize(prewhiten(orig_image)).reshape(*model_loader.input_shape))
                     
+                    if classifier:
+                        pred1 = classifier.predict(
+                            res1.numpy()
+                        )[0]
+                        
+                        pred2 = classifier.predict(
+                            res2.numpy()
+                        )[0]
+                    else:
+                        pred1 = -1
+                        pred2 = -1
+                    
                     predictions_classes_array.append(
                         [i, offset, 
                         # identity
@@ -242,13 +254,9 @@ class DriftSynthesisByEigenFacesExperiment:
                         # filename
                         self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'filenames'].iloc[choice], 
                         # predicting noised image
-                        classifier.predict(
-                            res1.numpy()
-                        )[0], 
+                        pred1, 
                         # predicting original b/w image
-                        classifier.predict(
-                            res2.numpy()
-                        )[0], 
+                        pred2, 
                         # euclidean distance
                         tf.norm(res1 - res2, ord=2).numpy(), 
                         # cosine distance

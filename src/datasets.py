@@ -2,7 +2,9 @@ from dataloaders import DataGenerator
 import scipy.io
 import numpy as np
 import pandas as pd
-import constants
+from pipeline.context import Constants
+
+constants = Constants()
 
 """
 CACD2000 DataGenerator
@@ -10,11 +12,11 @@ CACD2000 DataGenerator
 class CACD2000Dataset(DataGenerator):
   
   def __init__(self, logger, metadata_file, 
-               list_IDs, color_mode='grayscale', augmentation_generator=None, data_dir=None, batch_size=64, dim=(72*72), n_channels=1, n_classes=2, shuffle=True, valid=False):
+               list_IDs, color_mode='grayscale', augmentation_generator=None, data_dir=None, batch_size=64, dim=(72,72), n_channels=1, n_classes=2, shuffle=True, valid=False):
     self.logger = logger
     self.metadata_file = metadata_file
     
-    super(CACD2000Dataset, self).__init__(list_IDs, batch_size=64, dim=(72,72), n_channels=1,
+    super(CACD2000Dataset, self).__init__(list_IDs, batch_size=64, dim=dim, n_channels=1,
                  n_classes=2, shuffle=True, valid=False)
     
     self.metadata = self.load_dataset(metadata_file)
@@ -65,11 +67,11 @@ Reference: https://stanford.edu/~shervine/blog/keras-how-to-generate-data-on-the
 class AgeDBDataset(DataGenerator):
   
   def __init__(self, logger, metadata_file, 
-               list_IDs, color_mode='grayscale', augmentation_generator=None, data_dir=None, batch_size=64, dim=(72*72), n_channels=1, n_classes=2, shuffle=True, valid=False):
+               list_IDs, color_mode='grayscale', augmentation_generator=None, data_dir=None, batch_size=64, dim=(72,72), n_channels=1, n_classes=2, shuffle=True, valid=False):
     self.logger = logger
     self.metadata_file = metadata_file
     
-    super(AgeDBDataset, self).__init__(list_IDs, batch_size=64, dim=(72,72), n_channels=1,
+    super(AgeDBDataset, self).__init__(list_IDs, batch_size=64, dim=dim, n_channels=1,
                  n_classes=2, shuffle=True, valid=False)
     
     self.metadata = self.load_dataset(metadata_file)
@@ -124,11 +126,11 @@ FGNETDataset DataGenerator
 class FGNETDataset(DataGenerator):
   
   def __init__(self, logger, metadata_file, 
-               list_IDs, color_mode='grayscale', augmentation_generator=None, data_dir=None, batch_size=64, dim=(72*72), n_channels=1, n_classes=2, shuffle=True, valid=False):
+               list_IDs, color_mode='grayscale', augmentation_generator=None, data_dir=None, batch_size=64, dim=(72,72), n_channels=1, n_classes=2, shuffle=True, valid=False):
     self.logger = logger
     self.metadata_file = metadata_file
     
-    super(FGNETDataset, self).__init__(list_IDs, batch_size=64, dim=(72,72), n_channels=1,
+    super(FGNETDataset, self).__init__(list_IDs, batch_size=64, dim=dim, n_channels=1,
                  n_classes=2, shuffle=True, valid=False)
     
     self.metadata = self.load_dataset(metadata_file)

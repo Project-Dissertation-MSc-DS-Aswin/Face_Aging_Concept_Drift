@@ -128,8 +128,8 @@ In this section, the euclidean and cosine distances are collected and plotted wh
 
 ### 2. FaceNetWithAging
 
-- Experiment: [./src/experiment/facenet_with_aging.py](./src/experiment/facenet_with_aging.py)
-- Pipeline: [./src/pipeline/drift_synthesis_by_eigen_faces.py](./src/pipeline/drift_synthesis_by_eigen_faces.py)
+- Experiment: [./src/experiment/drift_synthesis_by_eigen_faces.py](./src/experiment/drift_synthesis_by_eigen_faces.py)
+- Pipeline: [./src/pipeline/facenet_with_aging.py](./src/pipeline/facenet_with_aging.py)
 
 This section performs the aging using PCA eigen faces. 
 
@@ -137,8 +137,8 @@ This section performs the aging using PCA eigen faces.
 
 ### 3 FaceRecogWithEigenFaces
 
-- Experiment: [./src/experiment/facenet_with_aging.py](./src/experiment/facenet_with_aging.py)
-- Pipeline: [./src/pipeline/drift_synthesis_by_eigen_faces.py](./src/pipeline/drift_synthesis_by_eigen_faces.py)
+- Experiment: [./src/experiment/drift_synthesis_by_eigen_faces.py](./src/experiment/drift_synthesis_by_eigen_faces.py)
+- Pipeline: [./src/pipeline/facenet_with_aging.py](./src/pipeline/facenet_with_aging.py)
 
 - Eigen faces
 

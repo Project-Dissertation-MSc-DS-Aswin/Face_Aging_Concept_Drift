@@ -10,7 +10,8 @@ from sklearn.metrics.pairwise import euclidean_distances, cosine_similarity
 def collect_data(model_loader, train_iterator):
   res_images = []
   # Get input and output tensors
-  for ii, (X, y) in tqdm(enumerate(train_iterator)):
+  for i in tqdm(range(len(train_iterator))):
+    X, y = train_iterator[i]
     res_images.append(model_loader.infer(l2_normalize(prewhiten(X))))
     
   return res_images
