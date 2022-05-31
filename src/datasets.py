@@ -16,7 +16,7 @@ class CACD2000Dataset(DataGenerator):
     self.logger = logger
     self.metadata_file = metadata_file
     
-    super(CACD2000Dataset, self).__init__(list_IDs, batch_size=64, dim=dim, n_channels=1,
+    super(CACD2000Dataset, self).__init__(list_IDs, batch_size=batch_size, dim=dim, n_channels=1,
                  n_classes=2, shuffle=True, valid=False)
     
     self.metadata = self.load_dataset(metadata_file)
@@ -71,7 +71,7 @@ class AgeDBDataset(DataGenerator):
     self.logger = logger
     self.metadata_file = metadata_file
     
-    super(AgeDBDataset, self).__init__(list_IDs, batch_size=64, dim=dim, n_channels=1,
+    super(AgeDBDataset, self).__init__(list_IDs, batch_size=batch_size, dim=dim, n_channels=1,
                  n_classes=2, shuffle=True, valid=False)
     
     self.metadata = self.load_dataset(metadata_file)
@@ -130,7 +130,7 @@ class FGNETDataset(DataGenerator):
     self.logger = logger
     self.metadata_file = metadata_file
     
-    super(FGNETDataset, self).__init__(list_IDs, batch_size=64, dim=dim, n_channels=1,
+    super(FGNETDataset, self).__init__(list_IDs, batch_size=batch_size, dim=dim, n_channels=1,
                  n_classes=2, shuffle=True, valid=False)
     
     self.metadata = self.load_dataset(metadata_file)

@@ -30,11 +30,11 @@ args.dataset = os.environ.get('dataset', 'agedb')
 args.model = os.environ.get('model', 'facenet_keras.h5')
 args.data_dir = os.environ.get('data_dir', constants.AGEDB_DATADIR)
 args.batch_size = int(os.environ.get('batch_size', 1))
-args.preprocess_whiten = int(os.environ.get('preprocess_whiten', 1))
+args.preprocess_whiten = int(os.environ.get('preprocess_whiten', 128))
 args.data_collection_pkl = os.environ.get('data_collection_pkl', constants.AGEDB_FACENET_INFERENCES)
 args.metadata = os.environ.get('metadata', constants.AGEDB_METADATA)
 args.logger_name = os.environ.get('logger_name', 'facenet_without_aging')
-args.no_of_samples = int(os.environ.get('no_of_samples', 2))
+args.no_of_samples = int(os.environ.get('no_of_samples', 2248))
 args.colormode = os.environ.get('colormode', 'color')
 
 parameters = list(
@@ -67,17 +67,17 @@ def load_dataset(args, whylogs):
     augmentation_generator = get_augmented_datasets()
     dataset = AgeDBDataset(whylogs, args.metadata, list_IDs=list(range(args.no_of_samples)), 
                            color_mode='rgb', augmentation_generator=augmentation_generator, data_dir=args.data_dir, 
-                           dim=(160,160))
+                           dim=(160,160), batch_size=args.batch_size)
   elif args.dataset == "cacd":
     augmentation_generator = get_augmented_datasets()
     dataset = CACD2000Dataset(whylogs, args.metadata, list_IDs=list(range(args.no_of_samples)), 
                               color_mode='rgb', augmentation_generator=augmentation_generator, data_dir=args.data_dir, 
-                              dim=(160,160))
+                              dim=(160,160), batch_size=args.batch_size)
   elif args.dataset == "fgnet":
     augmentation_generator = get_augmented_datasets()
     dataset = FGNETDataset(whylogs, args.metadata, list_IDs=None, 
                            color_mode='rgb', augmentation_generator=augmentation_generator, data_dir=args.data_dir, 
-                           dim=(160,160))
+                           dim=(160,160), batch_size=args.batch_size)
   
   return dataset
 
