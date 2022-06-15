@@ -1,10 +1,11 @@
 import sys
+import os
 sys.path.append("../")
 
 from copy import copy
 import yaml
 
-constants = yaml.load(open("../constants.yml", 'r').read())
+constants = yaml.load(open("../constants.yml", 'r').read(), yaml.Loader)
 
 class Args:
   

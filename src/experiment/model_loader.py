@@ -1,7 +1,9 @@
 import sys
-from keras.models import load_model
+import os
+import tensorflow as tf
+from tensorflow.keras.models import load_model
 from keras.preprocessing.image import ImageDataGenerator
-import skimage.transform
+import cv2
 from pipeline.context import Constants
 constants = Constants()
 
@@ -38,7 +40,8 @@ class KerasModelLoader:
   Load the Keras Model from model_path
   """
   def load_model(self):
-    self.model = load_model(self.model_path)
+    print(os.path.isfile(self.model_path))
+    self.model = load_model(self.model_path, compile=False)
     self.logger.log({
       "keras_model_summary": self.model.summary()
     })
@@ -50,4 +53,4 @@ class KerasModelLoader:
     return self.model.predict(data)
   
   def resize(self, data):
-    return skimage.transform.resize(data, (self.input_w, self.input_h))
+    return cv2.resize(data, (self.input_w, self.input_h))

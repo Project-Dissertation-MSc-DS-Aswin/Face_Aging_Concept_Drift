@@ -12,12 +12,12 @@ CACD2000 DataGenerator
 class CACD2000Dataset(DataGenerator):
   
   def __init__(self, logger, metadata_file, 
-               list_IDs, color_mode='grayscale', augmentation_generator=None, data_dir=None, batch_size=64, dim=(72,72), n_channels=1, n_classes=2, shuffle=True, valid=False):
+               list_IDs, color_mode='grayscale', augmentation_generator=None, data_dir=None, batch_size=64, dim=(72,72), n_channels=1, n_classes=2, shuffle=False, valid=False):
     self.logger = logger
     self.metadata_file = metadata_file
     
     super(CACD2000Dataset, self).__init__(list_IDs, batch_size=batch_size, dim=dim, n_channels=1,
-                 n_classes=2, shuffle=True, valid=False)
+                 n_classes=2, shuffle=shuffle, valid=False)
     
     self.metadata = self.load_dataset(metadata_file)
     self.mapping = self.load_identity_mapping(self.metadata)
@@ -57,9 +57,6 @@ class CACD2000Dataset(DataGenerator):
     self.logger.log({constants.INFO: "Identity mapping successfully loaded"})
     return np.unique(identity)
   
-  def __len__(self):
-    return len(self.iterator)
-  
 """
 AgeDBDataset DataGenerator
 Reference: https://stanford.edu/~shervine/blog/keras-how-to-generate-data-on-the-fly
@@ -67,12 +64,12 @@ Reference: https://stanford.edu/~shervine/blog/keras-how-to-generate-data-on-the
 class AgeDBDataset(DataGenerator):
   
   def __init__(self, logger, metadata_file, 
-               list_IDs, color_mode='grayscale', augmentation_generator=None, data_dir=None, batch_size=64, dim=(72,72), n_channels=1, n_classes=2, shuffle=True, valid=False):
+               list_IDs, color_mode='grayscale', augmentation_generator=None, data_dir=None, batch_size=64, dim=(72,72), n_channels=1, n_classes=2, shuffle=False, valid=False):
     self.logger = logger
     self.metadata_file = metadata_file
     
     super(AgeDBDataset, self).__init__(list_IDs, batch_size=batch_size, dim=dim, n_channels=1,
-                 n_classes=2, shuffle=True, valid=False)
+                 n_classes=2, shuffle=shuffle, valid=False)
     
     self.metadata = self.load_dataset(metadata_file)
     self.mapping = self.load_name_mapping(self.metadata)
@@ -117,21 +114,18 @@ class AgeDBDataset(DataGenerator):
     self.logger.log({constants.INFO: "Name mapping successfully loaded"})
     return np.unique(names)
   
-  def __len__(self):
-    return len(self.iterator)
-  
 """
 FGNETDataset DataGenerator
 """
 class FGNETDataset(DataGenerator):
   
   def __init__(self, logger, metadata_file, 
-               list_IDs, color_mode='grayscale', augmentation_generator=None, data_dir=None, batch_size=64, dim=(72,72), n_channels=1, n_classes=2, shuffle=True, valid=False):
+               list_IDs, color_mode='grayscale', augmentation_generator=None, data_dir=None, batch_size=64, dim=(72,72), n_channels=1, n_classes=2, shuffle=False, valid=False):
     self.logger = logger
     self.metadata_file = metadata_file
     
     super(FGNETDataset, self).__init__(list_IDs, batch_size=batch_size, dim=dim, n_channels=1,
-                 n_classes=2, shuffle=True, valid=False)
+                 n_classes=2, shuffle=shuffle, valid=False)
     
     self.metadata = self.load_dataset(metadata_file)
     self.mapping = self.load_identity_mapping(self.metadata)
@@ -175,5 +169,3 @@ class FGNETDataset(DataGenerator):
     self.logger.log({constants.INFO: "Identity mapping successfully loaded"})
     return np.unique(fileno)
   
-  def __len__(self):
-    return len(self.iterator)

@@ -6,6 +6,9 @@ from evaluation.distance import cosine, euclidean, face_distance
 import tensorflow as tf
 from tqdm import tqdm
 from sklearn.metrics.pairwise import euclidean_distances, cosine_similarity
+import numpy as np
+import pandas as pd
+from collections import OrderedDict
 
 def collect_data(model_loader, train_iterator):
   res_images = []

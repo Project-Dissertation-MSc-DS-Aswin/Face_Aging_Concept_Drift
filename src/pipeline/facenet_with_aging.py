@@ -1,10 +1,11 @@
-from context import constants
+import sys
+from context import Constants, Args
 import os
 import numpy as np
 import pandas as pd
 import argparse
 from sklearn.decomposition import PCA
-from logger import logger
+import whylogs
 import mlflow
 from datasets import CACD2000Dataset, FGNETDataset, AgeDBDataset
 from experiment.drift_synthesis_by_eigen_faces import DriftSynthesisByEigenFacesExperiment
@@ -13,47 +14,54 @@ from experiment.model_loader import get_augmented_datasets, preprocess_data_face
 from tqdm import tqdm
 from copy import copy
 import pickle
+import logging
+import sys
+import re
+import tensorflow as tf
 
-def parse_args():
-  parser = argparse.ArgumentParser()
-  parser.add_argument('--dataset', type=str, default='agedb',
-                      help='The name of the dataset')
-  parser.add_argument('--model', type=str, default='facenet_keras',
-                      help='The model to load')
-  parser.add_argument('--data_dir', type=str, default=constants.AGEDB_DATADIR,
-                      help='The images data directory')
-  parser.add_argument('--grouping_distance_type', type=str, default=constants.EIGEN_FACES_DISTANCES_GROUPING,
-                      help='The grouping distance type - Allowable values: DISTINCT | CUTOFF_RANGE')
-  parser.add_argument('--grouping_distance_cutoff_range', type=list, required=False,
-                      help='The grouping distance CUTOFF_RANGE')
-  parser.add_argument('--batch_size', type=int, default=128, metavar='N',
-                      help='The batch size for inference')
-  parser.add_argument('--preprocess_prewhiten', type=int, default=1,
-                      help='Check for preprocess (prewhiten) to be applied')
-  parser.add_argument('--data_collection_pkl', type=str, default=constants.AGEDB_FACENET_INFERENCES,
-                      help='Pickle object for data collection')
-  parser.add_argument('--pca_covariates_pkl', type=str, default=constants.AGEDB_PCA_COVARIATES,
-                      help='Pickle object for PCA model of eigen faces')
-  parser.add_argument('--metadata', type=str, default=constants.AGEDB_METADATA,
-                      help='Metadata mat file object that represents the metadata of images')
-  parser.add_argument('--logger_name', type=str, default='facenet_with_aging',
-                      help='The name of the logger')
-  parser.add_argument('--no_of_samples', type=int, default=2248,
-                      help='The number of samples')
-  parser.add_argument('--no_of_pca_samples', type=int, default=2248,
-                      help='The number of samples')
-  parser.add_argument('--colormode', type=str, default='color',
-                      help='The type of colormode')
-  parser.add_argument('--log_images', type=str, default='s3',
-                      help='The source artifact to log images of visualization')
-  parser.add_argument('--tracking_uri', type=str, default='http://localhost:5000',
-                      help='The uri to track mlflow with s3 or any other artifact root')
-  parser.add_argument('--classifier', type=str, default=constants.AGEDB_FACE_CLASSIFIER,
-                      help='The classifier pickle object which can detect the drift on synthetic based on ground truth data')
-  parser.add_argument('--drift_synthesis_filename', type=str, default=constants.AGEDB_DRIFT_SYNTHESIS_EDA_CSV_FILENAME,
-                      help='The filename to store with predictions classes')
-  
-  return parser.parse_args()
+"""
+Initializing constants from YAML file
+"""
+constants = Constants()
+args = Args({})
+
+args.dataset = os.environ.get('dataset', 'agedb')
+args.model = os.environ.get('model', 'facenet_keras.h5')
+args.data_dir = os.environ.get('data_dir', constants.AGEDB_DATADIR)
+args.grouping_distance_type = os.environ.get('grouping_distance_type', constants.EIGEN_FACES_DISTANCES_GROUPING)
+args.grouping_distance_cutoff_range = os.environ.get('grouping_distance_cutoff_range')
+args.batch_size = os.environ.get('batch_size', 128)
+args.preprocess_prewhiten = os.environ.get('preprocess_prewhiten', 1)
+args.data_collection_pkl = os.environ.get('data_collection_pkl', constants.AGEDB_FACENET_INFERENCES)
+args.pca_covariates_pkl = os.environ.get('pca_covariates_pkl', constants.AGEDB_PCA_COVARIATES)
+args.metadata = os.environ.get('metadata', constants.AGEDB_METADATA)
+args.logger_name = os.environ.get('logger_name', 'facenet_with_aging')
+args.no_of_samples = os.environ.get('no_of_samples', 2248)
+args.no_of_pca_samples = os.environ.get('no_of_pca_samples', 2248)
+args.colormode = os.environ.get('colormode', 'rgb')
+args.log_images = os.environ.get('log_images', 's3')
+args.tracking_uri = os.environ.get('tracking_uri', 'http://localhost:5000')
+args.classifier = os.environ.get('classifier', constants.AGEDB_FACE_CLASSIFIER)
+args.drift_synthesis_filename = os.environ.get('drift_synthesis_filename', constants.AGEDB_DRIFT_SYNTHESIS_EDA_CSV_FILENAME)
+
+parameters = list(
+    map(lambda s: re.sub('$', '"', s),
+        map(
+            lambda s: s.replace('=', '="'),
+            filter(
+                lambda s: s.find('=') > -1 and bool(re.match(r'[A-Za-z0-9_]*=[.\/A-Za-z0-9]*', s)),
+                sys.argv
+            )
+    )))
+
+for parameter in parameters:
+    logging.warning('Parameter: ' + parameter)
+    exec("args." + parameter)
+    
+args.batch_size = int(args.batch_size)
+args.preprocess_prewhiten = int(args.preprocess_prewhiten)
+args.no_of_samples = int(args.no_of_samples)
+args.no_of_pca_samples = int(args.no_of_pca_samples)
 
 def images_covariance(images_new, no_of_images):
     images_cov = np.cov(images_new.reshape(no_of_images, -1))
@@ -68,32 +76,35 @@ def demean_images(images_bw, no_of_images):
 def collect_images(train_iterator):
     images_bw = []
     # Get input and output tensors
-    for ii, (X, y) in tqdm(enumerate(train_iterator)):
+    for ii in tqdm(range(len(train_iterator))):
+        (X, y) = train_iterator[ii]
         images_bw.append(X)
 
-    return np.stack(images_bw)
+    return np.vstack(images_bw)
 
 def pca_covariates(images_cov):
     pca = PCA(n_components=images_cov.shape[0])
     X_pca = pca.fit_transform(images_cov)
-    return pca.components_.T[:args.no_of_samples], pca, X_pca
+    return pca.components_.T, pca, X_pca
 
-def load_dataset(args, whylogs, image_dim):
+def load_dataset(args, whylogs, image_dim, no_of_samples, colormode):
     dataset = None
     augmentation_generator = None
     if args.dataset == "agedb":
         augmentation_generator = get_augmented_datasets()
-        dataset = AgeDBDataset(whylogs, args.metadata, list_IDs=list(range(args.no_of_samples)),
-                               color_mode='rgb', augmentation_generator=augmentation_generator, data_dir=args.data_dir, dim=image_dim)
+        dataset = AgeDBDataset(whylogs, args.metadata, list_IDs=list(range(no_of_samples)),
+                               color_mode=colormode, augmentation_generator=augmentation_generator, data_dir=args.data_dir, dim=image_dim, 
+                               batch_size=args.batch_size)
     elif args.dataset == "cacd":
         augmentation_generator = get_augmented_datasets()
-        dataset = CACD2000Dataset(whylogs, args.metadata, list_IDs=list(range(args.no_of_samples)),
-                                  color_mode='rgb', augmentation_generator=augmentation_generator,
-                                  data_dir=args.data_dir, dim=image_dim)
+        dataset = CACD2000Dataset(whylogs, args.metadata, list_IDs=list(range(no_of_samples)),
+                                  color_mode=colormode, augmentation_generator=augmentation_generator,
+                                  data_dir=args.data_dir, dim=image_dim, batch_size=args.batch_size)
     elif args.dataset == "fgnet":
         augmentation_generator = get_augmented_datasets()
         dataset = FGNETDataset(whylogs, args.metadata, list_IDs=None,
-                               color_mode='rgb', augmentation_generator=augmentation_generator, data_dir=args.data_dir, dim=image_dim)
+                               color_mode=colormode, augmentation_generator=augmentation_generator, data_dir=args.data_dir, dim=image_dim, 
+                               batch_size=args.batch_size)
 
     return dataset, augmentation_generator
 
@@ -109,16 +120,13 @@ def get_reduced_metadata(args, dataset, seed=1000):
 
 if __name__ == "__main__":
 
-    args = parse_args()
-    
-    mlflow.set_tracking_uri(args.tracking_uri)
+    # mlflow.set_tracking_uri(args.tracking_uri)
 
-    whylogs = logger.setup_logger(args.logger_name)
     model_loader = KerasModelLoader(whylogs, args.model, input_shape=(-1,160,160,3))
     model_loader.load_model()
 
-    dataset, augmentation_generator = load_dataset(args, whylogs, (48,48))
-    experiment_dataset = load_dataset(args, whylogs, (160,160))
+    dataset, augmentation_generator = load_dataset(args, whylogs, (49,49), args.no_of_pca_samples, 'grayscale')
+    experiment_dataset, augmentation_generator = load_dataset(args, whylogs, (160,160), args.no_of_samples, 'rgb')
     
     pca_args = copy(args)
     pca_args.no_of_samples = pca_args.no_of_pca_samples
@@ -127,51 +135,88 @@ if __name__ == "__main__":
     )
     
     experiment_dataset.set_metadata(
-        get_reduced_metadata(args, experiment_dataset, seed=2000)
+        get_reduced_metadata(args, experiment_dataset)
     )
 
+    images_bw = collect_images(dataset.iterator)
+    images_new = demean_images(images_bw, len(dataset))
     if not os.path.isfile(args.pca_covariates_pkl):
-        images_bw = collect_images(dataset.iterator)
-        images_new = demean_images(images_bw, len(dataset.iterator))
         images_cov = images_covariance(images_new, len(images_new))
         P, pca, X_pca = pca_covariates(images_cov)
         
         pickle.dump(pca, open(args.pca_covariates_pkl, "wb"))
+    else:
+        pca = pickle.load(open(args.pca_covariates_pkl, "rb"))
 
-    experiment = DriftSynthesisByEigenFacesExperiment(experiment_dataset, logger=logger, model_loader=model_loader, pca=pca,
+    print(pca)
+    experiment = DriftSynthesisByEigenFacesExperiment(dataset, experiment_dataset, logger=whylogs, model_loader=model_loader, pca=pca,
                                                       init_offset=0)
 
-    P_pandas = pd.DataFrame(P, columns=list(range(P.shape[1])))
-    index = experiment.dataset.metadata['year'].reset_index()
+    P_pandas = pd.DataFrame(pca.components_.T, columns=list(range(pca.components_.T.shape[1])))
+    index = experiment.dataset.metadata['age'].reset_index()
 
     images = collect_images(experiment_dataset.iterator)
-    images_demean = demean_images(images, len(experiment_dataset.iterator))
     eigen_vectors = experiment.eigen_vectors()
-    b_vector = experiment.eigen_vector_coefficient(eigen_vectors, images_demean)
-    weights_vector = experiment.weights_vector(experiment.dataset.metadata, b_vector)
-
+    b_vector = experiment.eigen_vector_coefficient(eigen_vectors, images_new)
+    weights_vector, offset, mean_age, std_age, age = experiment.weights_vector(experiment.dataset.metadata, b_vector)
+    
+    b_vector_new = tf.constant(np.expand_dims(b_vector, 2), dtype=tf.float64)
+    error = tf.reduce_mean(age - offset - (tf.transpose(tf.matmul(tf.transpose(weights_vector, (0,2,1)), b_vector_new), (1, 0, 2)) / tf.norm(weights_vector, ord=2)))
+    offset *= std_age
+    offset += mean_age
+    weights_vector *= std_age
+    real_error = tf.reduce_mean(experiment.dataset.metadata['age'].values - offset - \
+        (tf.transpose(tf.matmul(tf.transpose(weights_vector, (0,2,1)), b_vector_new), (1, 0, 2)) / tf.norm(weights_vector, ord=2)) * std_age)
+    
+    print("""
+          Error: {error}, 
+          Real Error: {real_error}
+          """.format(error=error, real_error=real_error))
+    
     choices_array = None
-    offset_range = np.arange(2000, -2000, 500)
+    offset_range = np.arange(2000, -2000, -500)
     if args.log_images == 's3':
 
+        experiment.dataset.metadata['identity_grouping_distance'] = 0.0
+
+        distances = experiment.mahalanobis_distance(b_vector)
+        
+        experiment.dataset.metadata['identity_grouping_distance'] = distances
+        
+        if args.grouping_distance_type == 'DISTINCT':
+            experiment.dataset.metadata = experiment.set_hash_sample_by_distinct(experiment.dataset.metadata['identity_grouping_distance'])
+        elif args.grouping_distance_type == 'CUTOFF':
+            experiment.dataset.metadata = experiment.set_hash_sample_by_cutoff(
+                np.unique(np.round(np.unique(experiment.dataset.metadata['identity_grouping_distance']), 1)), 
+                                                 experiment.dataset.metadata)
+        
         figures, choices_array = experiment.plot_images_with_eigen_faces(
-            images, images_demean, np.mean(images_bw.reshape(len(experiment_dataset.iterator), -1), axis=1), 
-            weights_vector, b_vector, offset_range, P_pandas, index
+            images, images_new, weights_vector, offset, b_vector, offset_range, P_pandas, index
         )
         
         hash_samples = np.unique(experiment.dataset.metadata['hash_sample'])
         
-        # hash_sample
-        for ii, figure in enumerate(figures):
-            # offset range
-            for jj, (fig1, fig2, fig3) in enumerate(figure):
-                with mlflow.start_run():
-                    mlflow.log_figure(fig1, """{0}/hash_sample_{1}/offset_{2}_{3}.png""".format(args.logger_name, hash_samples[ii], str(jj), 'aging'))
-                    mlflow.log_figure(fig2, """{0}/hash_sample_{1}/offset_{2}_{3}.png""".format(args.logger_name, hash_samples[ii], str(jj), 'actual'))
-                    mlflow.log_figure(fig3, """{0}/hash_sample_{1}/offset_{2}_{3}.png""".format(args.logger_name, hash_samples[ii], str(jj), 'predicted'))
+        experiment_name = "FaceNet with Aging Drift (modified)"
+        mlflow_experiment = mlflow.get_experiment_by_name(experiment_name)
+        experiment_id = None
+        if experiment is not None:
+            experiment_id = mlflow_experiment.experiment_id
+        
+        if experiment_id is None:
+            experiment_id = mlflow.create_experiment(experiment_name)
+        with mlflow.start_run(experiment_id=experiment_id):
+            # hash_sample
+            for ii, figure in enumerate(figures):
+                # offset range
+                for jj, fig in enumerate(figure):
+                    fig1, fig2, fig3 = tuple(fig)
+                    mlflow.log_figure(fig1, """{0}/hash_sample_{1}/offset_{2}_{3}.png""".format(args.logger_name, str(hash_samples[ii]), str(jj), 'aging'))
+                    mlflow.log_figure(fig2, """{0}/hash_sample_{1}/offset_{2}_{3}.png""".format(args.logger_name, str(hash_samples[ii]), str(jj), 'actual'))
+                    mlflow.log_figure(fig3, """{0}/hash_sample_{1}/offset_{2}_{3}.png""".format(args.logger_name, str(hash_samples[ii]), str(jj), 'predicted'))
                 
-    predictions_classes_array = experiment.collect_drift_predictions(images, images_demean, np.mean(images_bw.reshape(len(experiment_dataset.iterator), -1), axis=1), 
-                                        weights_vector, b_vector, offset_range, P_pandas, index, 
+
+    predictions_classes_array = experiment.collect_drift_predictions(images, images_new, 
+                                        weights_vector, offset, b_vector, offset_range, P_pandas, index, 
                                         args.classifier, model_loader, choices_array=choices_array)
     
     predictions_classes = pd.DataFrame(predictions_classes_array, 

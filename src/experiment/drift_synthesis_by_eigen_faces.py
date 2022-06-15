@@ -2,21 +2,23 @@ from re import M
 import numpy as np
 import pandas as pd
 import random
-import skimage.color
+import cv2
 import tensorflow as tf
 from tqdm import tqdm
 import matplotlib
 import matplotlib.pyplot as plt
 from preprocessing.facenet import l2_normalize, prewhiten
 from copy import copy
+import cvxpy as cvx
 
 # use Agg backend to suppress the plot shown in command line
 matplotlib.use('Agg')
 
 class DriftSynthesisByEigenFacesExperiment:
 
-    def __init__(self, dataset, logger=None, model_loader=None, pca=None, init_offset=None):
+    def __init__(self, dataset, experiment_dataset, logger=None, model_loader=None, pca=None, init_offset=0):
         self.dataset = dataset
+        self.experiment_dataset = experiment_dataset
         self.logger = logger
         self.model_loader = model_loader
         self.pca = pca
@@ -36,24 +38,31 @@ class DriftSynthesisByEigenFacesExperiment:
     def eigen_vectors(self):
         return self.pca.components_.T
 
+    # b_vector as a matrix, individual rows correspond to a single training example
     def eigen_vector_coefficient(self, eigen_vectors, images_demean):
-        return np.matmul(np.linalg.inv(eigen_vectors), images_demean.reshape(self.no_of_images, -1))
+        return np.matmul(np.linalg.inv(eigen_vectors), images_demean.reshape(len(images_demean), -1))
 
-    def mahalanobis_distance(self, eigen_vector_coefficient):
+    def mahalanobis_distance(self, eigen_vector_coefficients):
+        
+        # each of the training example's parameters are considered as eigen vector coefficient
+        # covariance of model parameters from the training examples
         def mahalanobis(bn, bm, C):
             if len(C.shape) == 0:
                 return ((bn - bm)).dot((bn - bm).T) * C
             else:
-                return (((bn - bm).T).dot(np.linalg.inv(C))).T.dot((bn - bm).T)
+                return (((bn - bm)).dot(np.linalg.inv(C))).dot((bn - bm).T)
 
-        b_vector = eigen_vector_coefficient
+        # shape is 1 x model_parameters
+        b_vector = eigen_vector_coefficients
         bm = np.expand_dims(b_vector.mean(axis=1), 1)
-        C = np.cov(b_vector)
+        # shape is model parameters by model parameters
+        C = np.cov(eigen_vector_coefficients.T)
         distance = mahalanobis(b_vector, bm, C)
 
-        return distance
+        return np.diag(distance)
 
     def set_hash_sample_by_distinct(self, identity_grouping_distance):
+        self.dataset.metadata['hash_sample'] = 0
         for ii, distance in enumerate(identity_grouping_distance):
             start_cutoff = distance - 1e-128
             end_cutoff = distance + 1e-128
@@ -105,53 +114,80 @@ class DriftSynthesisByEigenFacesExperiment:
                                  (self.dataset.metadata[
                                       'identity_grouping_distance'] >= start_cutoff), 'hash_sample'] = ii + 1
         self.dataset.metadata.loc[
-            (self.dataset.metadata['identity_grouping_distance'] >= new_cutoff_range[-1]), 'hash_sample'] = len(
-            new_cutoff_range)
+            (self.dataset.metadata['identity_grouping_distance'] >= new_cutoff_range[-1]), 'hash_sample'] = len(new_cutoff_range)
 
-        return reduced_metadata
+        return self.dataset.metadata
 
-    def weights_vector(self, reduced_metadata, b_vector, init_offset=None):
-        if not init_offset:
-            init_offset = self.init_offset
-        w = (reduced_metadata['age'] - init_offset).dot(np.linalg.inv(b_vector))
-        return w
+    # solve by lagrangian
+    def weights_vector(self, metadata, b_vector, init_offset=None):
+
+        b_vector = tf.constant(np.expand_dims(b_vector, 2), dtype=tf.float64)
+        
+        np.random.seed(1000)
+        previous_weights = tf.Variable(np.random.normal(size=(2248, 2401, 1)), dtype=tf.float64)
+        np.random.seed(1000)
+        previous_offset = tf.Variable(np.random.normal(size=(2248,1)), dtype=tf.float64)
+
+        print(tf.norm(previous_weights, ord=1))
+        print(tf.norm(previous_offset, ord=1))
+
+        age = metadata['age'].values
+        mean_age = np.mean(age)
+        std_age = np.std(age)
+        age = (age - np.mean(age)) / np.std(age)
+
+        opt = tf.keras.optimizers.SGD(learning_rate=0.001)
+
+        loss = lambda: tf.pow(tf.reduce_sum(tf.abs(age - previous_offset - (tf.transpose(tf.matmul(tf.transpose(previous_weights, (0,2,1)), b_vector), (1, 0, 2)) / tf.norm(previous_weights, ord=2)))), 1) + \
+            tf.norm(previous_offset, ord=2)
+
+        opt_op = opt.minimize(loss, var_list=[previous_weights, previous_offset])
+
+        print(tf.norm(previous_weights, ord=1))
+        print(tf.norm(previous_offset, ord=1))
+
+        w = previous_weights.value()
+        o = previous_offset.value()
+        
+        return w, o, mean_age, std_age, age
 
     def aging_function(self, weights_vector, b_vector, init_offset=None):
-        if not init_offset:
+        if init_offset is None:
             init_offset = self.init_offset
-        return weights_vector.T.dot(b_vector) + init_offset
+        b_vector_new = tf.constant(np.expand_dims(b_vector, 2), dtype=tf.float64)
+        result = (tf.transpose(tf.matmul(tf.transpose(weights_vector, (0,2,1)), b_vector_new), (1, 0, 2)) / tf.norm(weights_vector, ord=2)) + init_offset
+        return result.numpy().flatten()
 
-    def plot_images_with_eigen_faces(self, images, images_demean, images_mean, weights_vector, b_vector, offset_range, P_pandas, index):
+    def plot_images_with_eigen_faces(self, images, images_demean, weights_vector, offset_vector, b_vector, offset_range, P_pandas, index):
         figures = []
         choices_array = []
-        for i in tqdm(np.unique(self.dataset.metadata['hash_sample'])):
+        for i in tqdm(np.unique(self.dataset.metadata['hash_sample'])[:5]):
             figure = []
             choices_list = []
-            f_now = self.dataset.metadata['identity_grouping_distance'] * (self.aging_function(weights_vector, b_vector, -11))
+            
+            f_now = self.dataset.metadata['identity_grouping_distance'] * (self.aging_function(weights_vector, b_vector, offset_vector))
             f_p_now = f_now[self.dataset.metadata['hash_sample'] == i] / \
                       np.sum(self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'identity_grouping_distance'])
             for offset in offset_range:
                 f_new = self.dataset.metadata['identity_grouping_distance'] * (self.aging_function(weights_vector, b_vector, offset))
                 f_p_new = f_new[self.dataset.metadata['hash_sample'] == i] / \
-                          np.sum(
-                              self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'identity_grouping_distance'])
+                          np.sum(self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'identity_grouping_distance'])
 
-                b_new = b_vector[self.dataset.metadata['hash_sample'] == i] + f_p_new.values.reshape(-1,
-                                                                                         1) - f_p_now.values.reshape(-1,
-                                                                                                                     1)
+                b_new = b_vector[self.dataset.metadata['hash_sample'] == i] + f_p_new.values.reshape(-1, 1) - f_p_now.values.reshape(-1, 1)
 
                 P_pandas_1 = P_pandas.loc[index.index.values[self.dataset.metadata['hash_sample'] == i],
                                           index.index.values[self.dataset.metadata['hash_sample'] == i]]
 
-                images_syn = images_demean.copy().reshape(len(self.dataset.iterator), -1)
+                images_syn = images_demean.copy().reshape(len(self.dataset), -1)
                 images_syn[self.dataset.metadata['hash_sample'] == i] = P_pandas_1.values.dot(b_new)
 
                 new_images = \
                     (images_syn[self.dataset.metadata['hash_sample'] == i]) + \
-                    images_mean[self.dataset.metadata['hash_sample'] == i].reshape(-1, 1)
-
-                choices = [random.choice(list(range(len(new_images))))]
-
+                    images_demean.reshape(len(self.dataset), -1)[self.dataset.metadata['hash_sample'] == i]
+                    
+                choices = np.random.choice(list(range(len(new_images))), size=3)
+                choices = np.unique(choices)
+                
                 fig1 = plt.figure(figsize=(8, 16))
                 for ii, choice in enumerate(choices):
                     plt.subplot(1, 3, ii + 1)
@@ -162,20 +198,21 @@ class DriftSynthesisByEigenFacesExperiment:
                 for ii, choice in enumerate(choices):
                     plt.subplot(1, 3, ii + 1)
                     plt.imshow(
-                        skimage.color.rgb2gray(images[self.dataset.metadata['hash_sample'] == i].reshape(-1, self.dataset.dim[0], self.dataset.dim[1], 3))[
-                            choice],
-                        cmap='gray')
+                        cv2.cvtColor(images[self.dataset.metadata['hash_sample'] == i]\
+                                .reshape(-1, self.experiment_dataset.dim[0], self.experiment_dataset.dim[1], 3)[choice], 
+                                cv2.COLOR_RGB2GRAY), cmap='gray')
                     plt.title("Actual Age = " + \
-                              self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'age'].iloc[choice].astype(
-                                  str))
+                              self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'age'].iloc[choice].astype(str))
 
                 fig3 = plt.figure(figsize=(8, 16))
                 for ii, choice in enumerate(choices):
                     plt.subplot(1, 3, ii + 1)
                     plt.imshow(
-                        skimage.color.rgb2gray(images[self.dataset.metadata['hash_sample'] == i].reshape(-1, self.dataset.dim[0], self.dataset.dim[1], 3))[
-                            choice] + \
-                        new_images.reshape(-1, self.dataset.dim[0], self.dataset.dim[1])[choice], cmap='gray')
+                        cv2.cvtColor(images\
+                            [self.dataset.metadata['hash_sample'] == i]\
+                                .reshape(-1, self.experiment_dataset.dim[0], self.experiment_dataset.dim[1], 3)[choice], 
+                                cv2.COLOR_RGB2GRAY) + \
+                        cv2.resize(new_images.reshape(-1, self.dataset.dim[0], self.dataset.dim[1])[choice], (160,160)), cmap='gray')
                     plt.title("Predicted Age = " + str(np.round(f_p_new.iloc[choice], 2)))
 
                 figure.append([fig1, fig2, fig3])
@@ -188,38 +225,35 @@ class DriftSynthesisByEigenFacesExperiment:
 
         return figures, choices_array
 
-    def collect_drift_predictions(self, images, images_demean, images_mean, weights_vector, b_vector, offset_range, P_pandas, index, 
+    def collect_drift_predictions(self, images, images_demean, weights_vector, offset_vector, 
+                                  b_vector, offset_range, P_pandas, index, 
                                   classifier, model_loader, choices_array=None):
         
         predictions_classes_array = []
         
-        for ii, i in tqdm(enumerate(np.unique(self.dataset.metadata['hash_sample']))):
-            f_now = self.dataset.metadata['identity_grouping_distance'] * (self.aging_function(weights_vector, b_vector, -11))
+        for i in tqdm(np.unique(self.dataset.metadata['hash_sample'])[:5]):
+            f_now = self.dataset.metadata['identity_grouping_distance'] * (self.aging_function(weights_vector, b_vector, offset_vector))
             f_p_now = f_now[self.dataset.metadata['hash_sample'] == i] / \
                       np.sum(self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'identity_grouping_distance'])
-            for jj, offset in enumerate(offset_range):
+            for offset in offset_range:
                 f_new = self.dataset.metadata['identity_grouping_distance'] * (self.aging_function(weights_vector, b_vector, offset))
                 f_p_new = f_new[self.dataset.metadata['hash_sample'] == i] / \
-                          np.sum(
-                              self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'identity_grouping_distance'])
+                          np.sum(self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'identity_grouping_distance'])
 
-                b_new = b_vector[self.dataset.metadata['hash_sample'] == i] + \
-                                f_p_new.values.reshape(-1, 1) - f_p_now.values.reshape(-1, 1)
+                b_new = b_vector[self.dataset.metadata['hash_sample'] == i] + f_p_new.values.reshape(-1, 1) - f_p_now.values.reshape(-1, 1)
 
                 P_pandas_1 = P_pandas.loc[index.index.values[self.dataset.metadata['hash_sample'] == i],
                                           index.index.values[self.dataset.metadata['hash_sample'] == i]]
 
-                images_syn = images_demean.copy().reshape(len(self.dataset.iterator), -1)
+                images_syn = images_demean.copy().reshape(len(self.dataset), -1)
                 images_syn[self.dataset.metadata['hash_sample'] == i] = P_pandas_1.values.dot(b_new)
 
                 new_images = \
                     (images_syn[self.dataset.metadata['hash_sample'] == i]) + \
-                    images_mean[self.dataset.metadata['hash_sample'] == i].reshape(-1, 1)
-
-                if choices_array is None:
-                    choices = [random.choice(list(range(len(new_images))))]
-                else:
-                    choices = choices_array[ii][jj]
+                    images_demean.reshape(len(self.dataset), -1)[self.dataset.metadata['hash_sample'] == i]
+                    
+                choices = np.random.choice(list(range(len(new_images))), size=3)
+                choices = np.unique(choices)
                     
                 for ii, choice in enumerate(choices):
                     image = new_images[choice].reshape(self.dataset.dim[0], self.dataset.dim[1])

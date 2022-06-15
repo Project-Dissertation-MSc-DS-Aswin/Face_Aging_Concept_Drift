@@ -12,7 +12,7 @@ https://stanford.edu/~shervine/blog/keras-how-to-generate-data-on-the-fly
 class DataGenerator(tf.keras.utils.Sequence):
     'Generates data for Keras'
     def __init__(self, list_IDs, batch_size=64, dim=(72,72), n_channels=1,
-                 n_classes=2, shuffle=True, valid=False):
+                 n_classes=2, shuffle=False, valid=False):
         'Initialization'
         self.dim = dim
         self.batch_size = batch_size
@@ -31,13 +31,13 @@ class DataGenerator(tf.keras.utils.Sequence):
                                                                 target_size=self.dim,
                                                                 color_mode=color_mode, 
                                                                 batch_size=batch_size, 
-                                                                class_mode='categorical', classes=None, shuffle=False)
+                                                                class_mode='categorical', classes=None, shuffle=self.shuffle)
         
         return train_iterator
 
     def __len__(self):
         'Denotes the number of batches per epoch'
-        return len(self.iterator)
+        return len(self.list_IDs)
 
     def __getitem__(self, index):
         'Generate one batch of data'
