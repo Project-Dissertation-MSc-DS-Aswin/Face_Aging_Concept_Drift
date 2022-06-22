@@ -34,7 +34,19 @@ class DataGenerator(tf.keras.utils.Sequence):
                                                                 class_mode='categorical', classes=None, shuffle=self.shuffle)
         
         return train_iterator
-
+    
+    def get_iterator_face_classificaton(self, color_mode, batch_size, data_dir, augmentation_generator, x_col='filename', y_cols=None):
+        train_iterator = augmentation_generator.flow_from_dataframe(self.metadata, 
+                                                                x_col=x_col, 
+                                                                y_col=y_cols,
+                                                                directory=data_dir, 
+                                                                target_size=self.dim,
+                                                                color_mode=color_mode, 
+                                                                batch_size=batch_size, 
+                                                                class_mode='multi_output', classes=None, shuffle=self.shuffle)
+        
+        return train_iterator
+        
     def __len__(self):
         'Denotes the number of batches per epoch'
         return len(self.list_IDs)
