@@ -18,9 +18,11 @@ AGEDB_PCA_COVARIATES: './data_collection/agedb_pca_covariates.pkl'
 FGNET_PCA_COVARIATES: './data_collection/fgnet_pca_covariates.pkl'
 CACD_PCA_COVARIATES: './data_collection/cacd_pca_covariates.pkl'
 MLFLOW_TRACKING_URI: 'http://localhost:5000'
-AGEDB_DRIFT_SYNTHESIS_EDA_CSV_FILENAME: "./data_collection/agedb_drift_synthesis_eda_predictions_classes.csv"
-FGNET_DRIFT_SYNTHESIS_EDA_CSV_FILENAME: "./data_collection/fgnet_drift_synthesis_eda_predictions_classes.csv"
-CACD_DRIFT_SYNTHESIS_EDA_CSV_FILENAME: "./data_collection/cacd_drift_synthesis_eda_predictions_classes.csv"
-AGEDB_FACE_CLASSIFIER: './models/agedb_svm_kernel_classifier.pkl'
-FGNET_FACE_CLASSIFIER: './models/fgnet_svm_kernel_classifier.pkl'
-CACD_FACE_CLASSIFIER: './models/cacd_svm_kernel_classifier.pkl'
+AGEDB_DRIFT_SYNTHESIS_EDA_CSV_FILENAME: "../data_collection/agedb_drift_synthesis_eda_predictions_classes.csv"
+FGNET_DRIFT_SYNTHESIS_EDA_CSV_FILENAME: "../data_collection/fgnet_drift_synthesis_eda_predictions_classes.csv"
+CACD_DRIFT_SYNTHESIS_EDA_CSV_FILENAME: "../data_collection/cacd_drift_synthesis_eda_predictions_classes.csv"
+AGEDB_FACE_CLASSIFIER: '../models/agedb_voting_classifier_age.pkl'
+FGNET_FACE_CLASSIFIER: '../models/fgnet_voting_classifier.pkl'
+CACD_FACE_CLASSIFIER: '../models/cacd_voting_classifier.pkl'
+AGEDB_DRIFT_EVALUATE_METRICS: "../data_collection/agedb_drift_evaluate_metrics.csv"
+AGEDB_DRIFT_SOURCE_FILENAME: "../data_collection/agedb_drift_source_table.csv"

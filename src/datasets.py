@@ -64,14 +64,15 @@ Reference: https://stanford.edu/~shervine/blog/keras-how-to-generate-data-on-the
 class AgeDBDataset(DataGenerator):
   
   def __init__(self, logger, metadata_file, 
-               list_IDs, color_mode='grayscale', augmentation_generator=None, data_dir=None, batch_size=64, dim=(72,72), n_channels=1, n_classes=2, shuffle=False, valid=False):
+               list_IDs, color_mode='grayscale', augmentation_generator=None, data_dir=None, batch_size=64, dim=(72,72), n_channels=1, n_classes=2, shuffle=False, valid=False, 
+               filter_func=None):
     self.logger = logger
     self.metadata_file = metadata_file
     
     super(AgeDBDataset, self).__init__(list_IDs, batch_size=batch_size, dim=dim, n_channels=1,
                  n_classes=2, shuffle=shuffle, valid=False)
     
-    self.metadata = self.load_dataset(metadata_file)
+    self.metadata = self.load_dataset(metadata_file, filter_func)
     self.mapping = self.load_name_mapping(self.metadata)
     
     self.color_mode = color_mode
@@ -86,7 +87,7 @@ class AgeDBDataset(DataGenerator):
   Loads the metadata of the dataset
   returns: pd.DataFrame
   """
-  def load_dataset(self, metadata_file):
+  def load_dataset(self, metadata_file, filter_func=None):
     mat = scipy.io.loadmat(metadata_file)
     self.logger.log({constants.INFO: "Dataset/Metadata successfully loaded"})
     fileno = list(map(lambda x: x[0], mat['fileno'][0]))
@@ -100,6 +101,8 @@ class AgeDBDataset(DataGenerator):
     metadata_agedb['fileno'] = metadata_agedb['fileno'].astype(np.int)
     metadata_agedb['name'] = metadata_agedb['name'].astype(np.str)
     metadata_agedb['filename'] = metadata_agedb['filename'].astype(np.str)
+    if filter_func is not None:
+      metadata_agedb = metadata_agedb.apply(filter_func, axis=1)
     return metadata_agedb
   
   def set_metadata(self, metadata):

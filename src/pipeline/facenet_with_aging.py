@@ -4,7 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 import argparse
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, KernelPCA
 import whylogs
 import mlflow
 from datasets import CACD2000Dataset, FGNETDataset, AgeDBDataset
@@ -18,6 +18,9 @@ import logging
 import sys
 import re
 import tensorflow as tf
+import imageio
+from sklearn.metrics import accuracy_score, recall_score, roc_auc_score
+from sklearn.manifold import Isomap
 
 """
 Initializing constants from YAML file
@@ -43,6 +46,11 @@ args.log_images = os.environ.get('log_images', 's3')
 args.tracking_uri = os.environ.get('tracking_uri', 'http://localhost:5000')
 args.classifier = os.environ.get('classifier', constants.AGEDB_FACE_CLASSIFIER)
 args.drift_synthesis_filename = os.environ.get('drift_synthesis_filename', constants.AGEDB_DRIFT_SYNTHESIS_EDA_CSV_FILENAME)
+args.experiment_id = os.environ.get('experiment_id', 0)
+args.drift_source_filename = os.environ.get('drift_source_filename', constants.AGEDB_DRIFT_SOURCE_FILENAME)
+args.pca_type = os.environ.get('pca_type', 'PCA')
+args.bins = os.environ.get('bins', np.ceil(0.85 * 239))
+args.mode = os.environ.get('mode', 'image_reconstruction')
 
 parameters = list(
     map(lambda s: re.sub('$', '"', s),
@@ -62,6 +70,7 @@ args.batch_size = int(args.batch_size)
 args.preprocess_prewhiten = int(args.preprocess_prewhiten)
 args.no_of_samples = int(args.no_of_samples)
 args.no_of_pca_samples = int(args.no_of_pca_samples)
+args.bins = int(args.bins)
 
 def images_covariance(images_new, no_of_images):
     images_cov = np.cov(images_new.reshape(no_of_images, -1))
@@ -82,10 +91,15 @@ def collect_images(train_iterator):
 
     return np.vstack(images_bw)
 
-def pca_covariates(images_cov):
-    pca = PCA(n_components=images_cov.shape[0])
+def pca_covariates(images_cov, pca_type='PCA'):
+    pca = KernelPCA(n_components=images_cov.shape[0], kernel='poly') if pca_type == 'KernelPCA' else PCA(n_components=images_cov.shape[0])
     X_pca = pca.fit_transform(images_cov)
-    return pca.components_.T, pca, X_pca
+    return pca.components_.T if pca_type == 'PCA' else pca.eigenvectors_, pca, X_pca
+
+def isomap_images(images_bw):
+    isomap = Isomap(n_components=images_bw.shape[0])
+    X_transform = isomap.fit(images_bw)
+    return isomap.embedding_vectors_, isomap, X_transform
 
 def load_dataset(args, whylogs, image_dim, no_of_samples, colormode):
     dataset = None
@@ -113,14 +127,24 @@ def get_reduced_metadata(args, dataset, seed=1000):
     return dataset.metadata
   elif args.dataset == "agedb":
     np.random.seed(seed)
-    return dataset.metadata.sample(args.no_of_samples).reset_index()
+    if args.mode == 'image_reconstruction':
+        filenames = pd.read_csv(args.drift_source_filename)
+        idx = [dataset.metadata['filename'] == filename for filename in filenames['filename']]
+        result_idx = [False]*len(dataset.metadata)
+        for i in idx:
+            result_idx = np.logical_or(result_idx, i)
+        
+        return dataset.metadata.loc[result_idx].reset_index()
+    elif args.mode == 'image_perturbation':
+        np.random.seed(seed)
+        return dataset.metadata.sample(args.no_of_samples).reset_index()
   elif args.dataset == "cacd":
     np.random.seed(seed)
     return dataset.metadata.sample(args.no_of_samples).reset_index()
 
 if __name__ == "__main__":
 
-    # mlflow.set_tracking_uri(args.tracking_uri)
+    mlflow.set_tracking_uri(args.tracking_uri)
 
     model_loader = KerasModelLoader(whylogs, args.model, input_shape=(-1,160,160,3))
     model_loader.load_model()
@@ -142,39 +166,45 @@ if __name__ == "__main__":
     images_new = demean_images(images_bw, len(dataset))
     if not os.path.isfile(args.pca_covariates_pkl):
         images_cov = images_covariance(images_new, len(images_new))
-        P, pca, X_pca = pca_covariates(images_cov)
+        P, pca, X_pca = pca_covariates(images_cov, args.pca_type)
         
         pickle.dump(pca, open(args.pca_covariates_pkl, "wb"))
     else:
         pca = pickle.load(open(args.pca_covariates_pkl, "rb"))
 
     print(pca)
-    experiment = DriftSynthesisByEigenFacesExperiment(dataset, experiment_dataset, logger=whylogs, model_loader=model_loader, pca=pca,
+    experiment = DriftSynthesisByEigenFacesExperiment(args, dataset, experiment_dataset, logger=whylogs, model_loader=model_loader, pca=pca,
                                                       init_offset=0)
 
-    P_pandas = pd.DataFrame(pca.components_.T, columns=list(range(pca.components_.T.shape[1])))
+    P_pandas = pd.DataFrame(pca.components_.T if args.pca_type == 'PCA' else pca.eigenvectors_, 
+                            columns=list(range(pca.components_.T.shape[1] if args.pca_type == 'PCA' else pca.eigenvectors_.shape[1])))
     index = experiment.dataset.metadata['age'].reset_index()
 
     images = collect_images(experiment_dataset.iterator)
     eigen_vectors = experiment.eigen_vectors()
     b_vector = experiment.eigen_vector_coefficient(eigen_vectors, images_new)
-    weights_vector, offset, mean_age, std_age, age = experiment.weights_vector(experiment.dataset.metadata, b_vector)
+    if args.mode == 'image_reconstruction':
+        weights_vector, offset, mean_age, std_age, age = experiment.weights_vector(experiment.dataset.metadata, b_vector)
+        
+        b_vector_new = tf.constant(np.expand_dims(b_vector, 2), dtype=tf.float64)
+        error = tf.reduce_mean(age - offset - (tf.transpose(tf.matmul(tf.transpose(weights_vector, (0,2,1)), b_vector_new), (1, 0, 2)) / tf.norm(weights_vector, ord=2)))
+        offset *= std_age
+        offset += mean_age
+        weights_vector *= std_age
+        real_error = tf.reduce_mean(experiment.dataset.metadata['age'].values - offset - \
+            (tf.transpose(tf.matmul(tf.transpose(weights_vector, (0,2,1)), b_vector_new), (1, 0, 2)) / tf.norm(weights_vector, ord=2)) * std_age)
     
-    b_vector_new = tf.constant(np.expand_dims(b_vector, 2), dtype=tf.float64)
-    error = tf.reduce_mean(age - offset - (tf.transpose(tf.matmul(tf.transpose(weights_vector, (0,2,1)), b_vector_new), (1, 0, 2)) / tf.norm(weights_vector, ord=2)))
-    offset *= std_age
-    offset += mean_age
-    weights_vector *= std_age
-    real_error = tf.reduce_mean(experiment.dataset.metadata['age'].values - offset - \
-        (tf.transpose(tf.matmul(tf.transpose(weights_vector, (0,2,1)), b_vector_new), (1, 0, 2)) / tf.norm(weights_vector, ord=2)) * std_age)
-    
-    print("""
-          Error: {error}, 
-          Real Error: {real_error}
-          """.format(error=error, real_error=real_error))
+        print("""
+            Error: {error}, 
+            Real Error: {real_error}
+            """.format(error=error, real_error=real_error))
+        
+    elif args.mode == 'image_perturbation':
+        weights_vector = weights_vector_perturbation(self, reduced_metadata, b_vector, init_offset=0)
+        
     
     choices_array = None
-    offset_range = np.arange(2000, -2000, -500)
+    offset_range = np.arange(100, -100, -200)
     if args.log_images == 's3':
 
         experiment.dataset.metadata['identity_grouping_distance'] = 0.0
@@ -185,10 +215,8 @@ if __name__ == "__main__":
         
         if args.grouping_distance_type == 'DISTINCT':
             experiment.dataset.metadata = experiment.set_hash_sample_by_distinct(experiment.dataset.metadata['identity_grouping_distance'])
-        elif args.grouping_distance_type == 'CUTOFF':
-            experiment.dataset.metadata = experiment.set_hash_sample_by_cutoff(
-                np.unique(np.round(np.unique(experiment.dataset.metadata['identity_grouping_distance']), 1)), 
-                                                 experiment.dataset.metadata)
+        elif args.grouping_distance_type == 'DIST':
+            experiment.dataset.metadata = experiment.set_hash_sample_by_dist(experiment.dataset.metadata['identity_grouping_distance'])
         
         figures, choices_array = experiment.plot_images_with_eigen_faces(
             images, images_new, weights_vector, offset, b_vector, offset_range, P_pandas, index
@@ -209,41 +237,81 @@ if __name__ == "__main__":
             for ii, figure in enumerate(figures):
                 # offset range
                 for jj, fig in enumerate(figure):
-                    fig1, fig2, fig3 = tuple(fig)
+                    # aging function
+                    fig1, fig2, fig3, imgs, ages = tuple(fig)
                     mlflow.log_figure(fig1, """{0}/hash_sample_{1}/offset_{2}_{3}.png""".format(args.logger_name, str(hash_samples[ii]), str(jj), 'aging'))
                     mlflow.log_figure(fig2, """{0}/hash_sample_{1}/offset_{2}_{3}.png""".format(args.logger_name, str(hash_samples[ii]), str(jj), 'actual'))
                     mlflow.log_figure(fig3, """{0}/hash_sample_{1}/offset_{2}_{3}.png""".format(args.logger_name, str(hash_samples[ii]), str(jj), 'predicted'))
+                    os.makedirs("""{0}/hash_sample_{1}""".format(args.logger_name, str(hash_samples[ii])), exist_ok=True)
                 
-
+    voting_classifier_array = pickle.load(open(args.classifier, 'rb'))
+    
     predictions_classes_array = experiment.collect_drift_predictions(images, images_new, 
                                         weights_vector, offset, b_vector, offset_range, P_pandas, index, 
-                                        args.classifier, model_loader, choices_array=choices_array)
+                                        voting_classifier_array, model_loader, choices_array=choices_array)
     
+    np.save(open('predictions_classes_array.npy', 'wb'), np.array(predictions_classes_array))
     predictions_classes = pd.DataFrame(predictions_classes_array, 
-                                columns=['hash_sample', 'offset', 'true_identity', 'age', 'filename', 
-                                'y_pred', 'y_drift', 'euclidean', 'cosine', 'identity_grouping_distance'])
+                        columns=['hash_sample', 'offset', 'true_identity', 'age', 'filename', 
+                        'y_pred', 'y_drift', 'predicted_age', 'euclidean', 'cosine', 'identity_grouping_distance', 
+                        'orig_TP', 'orig_FN', 'virtual_TP', 'virtual_FN', 'stat_TP', 'stat_FP', 'stat_undefined'])
     
-    for value in predictions_classes_array:
-        with mlflow.start_run():
-            mlflow.log_param(dict(zip(predictions_classes.columns.values.tolist(), value)))
+    predictions_classes.to_csv(args.drift_synthesis_filename)
     
-    predictions_classes = experiment.calculate_confusion_matrix_elements(predictions_classes)
+    # predictions_classes = pd.read_csv(args.drift_synthesis_filename)
     
-    recall = predictions_classes['TP'].sum() / (predictions_classes['TP'].sum() + predictions_classes['FN'].sum())
-    precision = predictions_classes['TP'].sum() / (predictions_classes['TP'].sum() + predictions_classes['FP'].sum())
-    accuracy = (predictions_classes['TP'].sum() + predictions_classes['TN'].sum()) / \
-    (predictions_classes['TP'].sum() + predictions_classes['TN'].sum() + predictions_classes['FP'].sum() + predictions_classes['FN'].sum())
+    recall = predictions_classes['orig_TP'].sum() / (predictions_classes['orig_FN'].sum() + predictions_classes['orig_TP'].sum())
+    precision = 1.0
+    accuracy = (predictions_classes['orig_TP'].sum()) / (predictions_classes['orig_TP'].sum() + predictions_classes['orig_FN'].sum())
     f1 = 2 * recall * precision / (recall + precision)
+    
+    recall_virtual = predictions_classes['virtual_TP'].sum() / (predictions_classes['virtual_FN'].sum() + predictions_classes['virtual_TP'].sum())
+    precision_virtual = 1.0
+    accuracy_virtual = (predictions_classes['virtual_TP'].sum()) / (predictions_classes['virtual_TP'].sum() + predictions_classes['virtual_FN'].sum())
+    f1_virtual = 2 * recall_virtual * precision_virtual / (recall_virtual + precision_virtual)
+    
+    recall_drift = recall_score(predictions_classes['orig_TP'], predictions_classes['stat_FP'])
+    precision_drift = 1.0
+    accuracy_drift = accuracy_score(predictions_classes['orig_TP'], predictions_classes['stat_FP'])
+    f1_drift = 2 * recall_drift * precision_drift / (recall_drift + precision_drift)
+    roc_drift = roc_auc_score(predictions_classes['orig_TP'], predictions_classes['stat_FP'])
+    
     print("""
-        Recall: {recall}, 
-        Precision: {precision}, 
-        F1: {f1},  
-        Accuracy: {accuracy}
+        Drift Source - Original Image
+        -----------------------------
+        Recall of prediction: {recall}, 
+        Precision of prediction: {precision}, 
+        F1 of prediction: {f1},  
+        Accuracy of prediction: {accuracy}, 
+        
+        Drift Source - Reconstructed Image
+        ----------------------------------
+        Recall of prediction: {recall_virtual}, 
+        Precision of prediction: {precision_virtual}, 
+        F1 of prediction: {f1_virtual},  
+        Accuracy of prediction: {accuracy_virtual}, 
+        
+        Statistical Drift Detected
+        --------------------------
+        Accuracy of Drift: {accuracy_drift}, 
+        Recall of Drift: {recall_drift}, 
+        Precision of Drift: {precision_drift}, 
+        F1 of Drift: {f1_drift}, 
+        ROC of Drift: {roc_drift}, 
     """.format(
         accuracy=accuracy, 
         f1=f1, 
         precision=precision, 
-        recall=recall
+        recall=recall, 
+        accuracy_virtual=accuracy_virtual, 
+        f1_virtual=f1_virtual, 
+        precision_virtual=precision_virtual, 
+        recall_virtual=recall_virtual, 
+        accuracy_drift=accuracy_drift, 
+        f1_drift=f1_drift, 
+        precision_drift=precision_drift, 
+        recall_drift=recall_drift, 
+        roc_drift=roc_drift
     ))
     
     mlflow.log_metric("recall", recall)
@@ -251,9 +319,7 @@ if __name__ == "__main__":
     mlflow.log_metric("f1", f1)
     mlflow.log_metric("accuracy", accuracy)
     
-    predictions_classes.to_csv(args.drift_synthesis_filename)
-        
-    with mlflow.start_run():
+    with mlflow.start_run(experiment_id=args.experiment_id):
         figure = experiment.plot_histogram_of_face_distances()
         mlflow.log_figure(figure, "histogram_of_face_distances.png")
         figure = experiment.plot_scatter_of_drift_confusion_matrix()

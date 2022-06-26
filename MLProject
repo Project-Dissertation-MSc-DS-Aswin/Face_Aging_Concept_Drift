@@ -1,0 +1,21 @@
+name: My Project
+
+conda_env: face_aging_concept_drift.yaml
+# Can have a docker_env instead of a conda_env, e.g.
+# docker_env:
+#    image:  mlflow-docker-example
+
+entry_points:
+  facenet_with_aging:
+    parameters:
+      tracking_uri: {type: path, default: file:///D:/DATA_HD_COMPUTER/DATA/Personal%20Data/Aswin's%20Data/University/Kingston/02.%20CI7000%20Project%20Dissertation/Dimitrios%20makris/Repositories_Datasets/Face_Aging_Concept_Drift}
+      dataset: {type: string, default: agedb}
+      model: {type: path, default: ../../../face-age-verification-recognition/metadata/facenet_keras.h5}
+      batch_size: {type: float, default: 128.0}
+      metadata: {type: path, default: ../../../face-age-verification-recognition/metadata/Metadata_Datasets/AgeDB_metadata.mat}
+      no_of_samples: {type: float, default: 2248}
+      no_of_pca_samples: {type: float, default: 2248}
+      pca_covariates_pkl: {type: path, default: ../data_collection/agedb_pca_covariates.pkl}
+      grouping_distance_type: {type: string, default: CUTOFF}
+
+    command: "python ./src/pipeline/facenet_with_aging.py {dataset} {model} {batch_size} {metadata} {no_of_samples} {no_of_pca_samples} {pca_covariates_pkl} {grouping_distance_type} {tracking_uri}"

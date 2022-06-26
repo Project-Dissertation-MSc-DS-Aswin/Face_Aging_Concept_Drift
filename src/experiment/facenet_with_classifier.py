@@ -16,6 +16,8 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import VotingClassifier
+from mlflow.tracking import MlflowClient
+from mlflow.tracking.fluent import _get_or_start_run
 
 def collect_data(model_loader, train_iterator):
   res_images = []
@@ -65,19 +67,20 @@ class FaceNetWithClassifierPredictor:
     
   def train_and_fit(self, faces_chunk_array_train, face_classes_array_train, 
                     base_estimators, svm_embedding_array, 
-                    rf_embedding_array, hist_embedding_array, knn_embeding_array, knn_emb, 
-                    score_embedding, voting_classifier_array, face_classes_count, idx):
+                    rf_embedding_array, hist_embedding_array, knn_embeding_array, 
+                    score_embedding_test, score_embedding_train, voting_classifier_array, face_classes_count_test, 
+                    face_classes_count_train, iidx, no_of_classes):
   
-    face_classes = np.concatenate(face_classes_array_train[idx*3:idx*3+3])
+    face_classes = np.concatenate(face_classes_array_train[iidx*no_of_classes:iidx*no_of_classes+no_of_classes])
     np.random.seed(100)
     idx = np.arange(len(face_classes))
     np.random.shuffle(idx)
-    face_classes_train = face_classes[idx[:int(0.7*len(face_classes))]]
-    faces_data = np.vstack(faces_chunk_array_train[idx*3:idx*3+3])
-    faces_data_train = faces_data[idx[:int(0.7*len(face_classes))]]
+    face_classes_train = face_classes[idx[:int(0.8*len(face_classes))]]
+    faces_data = np.vstack(faces_chunk_array_train[iidx*no_of_classes:iidx*no_of_classes+no_of_classes])
+    faces_data_train = faces_data[idx[:int(0.8*len(face_classes))]]
     
-    face_classes_test = face_classes[idx[int(0.7*len(face_classes)):]]
-    faces_data_test = faces_data[idx[int(0.7*len(face_classes)):]]
+    face_classes_test = face_classes[idx[int(0.8*len(face_classes)):]]
+    faces_data_test = faces_data[idx[int(0.8*len(face_classes)):]]
     
     voting_classifier = VotingClassifier(estimators=base_estimators, voting='soft')
     
@@ -88,11 +91,13 @@ class FaceNetWithClassifierPredictor:
     hist_embedding_array.append(voting_classifier.named_estimators_.hist)
     knn_embeding_array.append(voting_classifier.named_estimators_.knn)
     
-    score_embedding.append(accuracy_score(face_classes_test, voting_classifier.predict(faces_data_test)))
+    score_embedding_test.append(accuracy_score(face_classes_test, voting_classifier.predict(faces_data_test)))
+    score_embedding_train.append(accuracy_score(face_classes_train, voting_classifier.predict(faces_data_train)))
     voting_classifier_array.append(voting_classifier)
-    face_classes_count += len(face_classes_test)
+    face_classes_count_test += [len(face_classes_test)]
+    face_classes_count_train += [len(face_classes_train)]
     
-    return score_embedding, face_classes_count, (voting_classifier_array, 
+    return score_embedding_test, score_embedding_train, face_classes_count_test, face_classes_count_train, (voting_classifier_array, 
                                                  svm_embedding_array, 
                                                  rf_embedding_array, 
                                                  hist_embedding_array, 
@@ -100,7 +105,8 @@ class FaceNetWithClassifierPredictor:
   
   def train_and_evaluate(self, faces_chunk_array_train, face_classes_array_train, 
                          param_grid, param_grid2, param_grid3, no_of_classes):
-    score_embedding = []
+    score_embedding_test = []
+    score_embedding_train = []
     svm_embedding_array = []
 
     svm_embedding_array = []
@@ -109,7 +115,8 @@ class FaceNetWithClassifierPredictor:
     knn_embeding_array = []
 
     voting_classifier_array = []
-    face_classes_count = []
+    face_classes_count_test = []
+    face_classes_count_train = []
     for idx in tqdm(range(len(face_classes_array_train)//no_of_classes)):
         svm_embedding, rf_emb, hist_emb, knn_emb = \
           base_estimators_voting_classifier_face_recognition(param_grid, param_grid2, param_grid3)
@@ -121,22 +128,90 @@ class FaceNetWithClassifierPredictor:
           ('hist', hist_emb)
         )
         
-        score_embedding, face_classes_count, (voting_classifier_array, 
-                                                 svm_embedding_array, 
-                                                 rf_embedding_array, 
-                                                 hist_embedding_array, 
-                                                 knn_embeding_array) = \
-        self.train_and_fit(faces_chunk_array_train, face_classes_array_train, 
-                    base_estimators, svm_embedding_array, 
-                    rf_embedding_array, hist_embedding_array, knn_embeding_array, knn_emb, 
-                    score_embedding, voting_classifier_array, face_classes_count, idx)
+        try:
+          score_embedding_test, score_embedding_train, face_classes_count_test, face_classes_count_train, (voting_classifier_array, 
+                                                  svm_embedding_array, 
+                                                  rf_embedding_array, 
+                                                  hist_embedding_array, 
+                                                  knn_embeding_array) = \
+          self.train_and_fit(faces_chunk_array_train, face_classes_array_train, 
+                      base_estimators, svm_embedding_array, 
+                      rf_embedding_array, hist_embedding_array, knn_embeding_array, 
+                      score_embedding_test, score_embedding_train, voting_classifier_array, face_classes_count_test, 
+                      face_classes_count_train, idx, no_of_classes)
+          
+          run_id = _get_or_start_run().info.run_id
+          MlflowClient().log_metric(run_id, "score_embedding_average_test_" + str(idx), np.mean(score_embedding_test))
+          MlflowClient().log_metric(run_id, "score_embedding_weighted_average_test_" + str(idx), np.sum(score_embedding_test * np.array(face_classes_count_test)) / np.sum(face_classes_count_test))
+          MlflowClient().log_metric(run_id, "standard_error_test_" + str(idx), pd.DataFrame((np.array(score_embedding_test * np.array(face_classes_count_test)) / np.sum(face_classes_count_test))).sem() * np.sqrt(len(score_embedding_test)))
+          MlflowClient().log_metric(run_id, "score_embedding_average_train_" + str(idx), np.mean(score_embedding_train))
+          MlflowClient().log_metric(run_id, "score_embedding_weighted_average_train_" + str(idx), np.sum(score_embedding_train * np.array(face_classes_count_train)) / np.sum(face_classes_count_train))
+          MlflowClient().log_metric(run_id, "standard_error_train_" + str(idx), pd.DataFrame((np.array(score_embedding_train * np.array(face_classes_count_train)) / np.sum(face_classes_count_train))).sem() * np.sqrt(len(score_embedding_train)))
+          
+        except Exception as e:
+          print(e.args)
         
-    return score_embedding, face_classes_count, (voting_classifier_array, 
+    return score_embedding_test, score_embedding_train, face_classes_count_test, face_classes_count_train, (voting_classifier_array, 
                                                  svm_embedding_array, 
                                                  rf_embedding_array, 
                                                  hist_embedding_array, 
                                                  knn_embeding_array)
     
+  def test_and_evaluate(self, voting_classifier_array, faces_chunk_array_test, face_classes_array_test, data, embeddings_test, 
+                        collect_for='age_drifting', 
+                        age_low=48, age_high=46):
+    voting_classifier_array_copy = copy(voting_classifier_array)
+
+    accuracy = {}
+    recall = {}
+    for i in tqdm(range(len(face_classes_array_test))):
+        face_classes = np.concatenate(face_classes_array_test[i:i+1])
+        faces_data = np.vstack(faces_chunk_array_test[i:i+1])
+        
+        if collect_for == 'classification':
+          df = data[
+              data['name'] == face_classes[0]
+          ]
+        if collect_for == 'age_drifting':
+          df1 = data[
+              (data['name'] == face_classes[0]) & (data['age'] <= age_low)
+          ]
+          df2 = data[
+              (data['name'] == face_classes[0]) & (data['age'] >= age_high)
+          ]
+          df = pd.concat([df1, df2], axis=0)
+          name = face_classes[0]
+        
+        if collect_for == 'classification':
+          for k in range(len(face_classes)):
+              true_positives = 0
+              false_negatives = 0
+              matches = 0
+              for j in range(len(voting_classifier_array_copy)):
+                  voting_classifier = voting_classifier_array_copy[j]
+                  faces_classes_pred = voting_classifier.predict(faces_data[k].reshape(-1,128))
+                  matches += (faces_classes_pred == face_classes[k]).sum()
+              true_positives += 1 if matches == 1 else 0
+              false_negatives += 0 if matches == 1 else 1
+          accuracy[face_classes[0] + "_accuracy"] = (true_positives) / (false_negatives + true_positives)
+          recall[face_classes[0] + "_recall"] = (true_positives) / (false_negatives + true_positives)
+          
+        elif collect_for == "age_drifting":
+          for idx, row in df.iterrows():
+            true_positives = 0
+            false_negatives = 0
+            matches = 0
+            for j in range(len(voting_classifier_array_copy)):
+                voting_classifier = voting_classifier_array_copy[j]
+                faces_classes_pred = voting_classifier.predict(embeddings_test[row['face_id']].reshape(-1,128))
+                matches += (faces_classes_pred == name).sum()
+            true_positives += 1 if matches == 1 else 0
+            false_negatives += 0 if matches == 1 else 1
+            accuracy[row['files'] + "_accuracy"] = (true_positives) / (false_negatives + true_positives)
+            recall[row['files'] + "_recall"] = (true_positives) / (false_negatives + true_positives)
+        
+    return accuracy, recall
+  
   def make_train_test_split(self, embeddings, files, ages, labels, seed=1000):
     np.random.seed(1000)
     files_train = self.metadata.sample(int(0.9*len(embeddings)))['filename'].values
@@ -150,8 +225,8 @@ class FaceNetWithClassifierPredictor:
     embeddings_train = tf.concat(embeddings_train, axis=0)
     embeddings_test = tf.concat(embeddings_test, axis=0)
     
-    self.embeddings_train - embeddings_train
-    self.embeddings_test - embeddings_test
+    self.embeddings_train = embeddings_train.numpy()
+    self.embeddings_test = embeddings_test.numpy()
     
     labels_train = [labels[files.index(f)] for ii, f in enumerate(files_train)]
     labels_test = [labels[files.index(f)] for ii, f in enumerate(files_test)]
@@ -159,15 +234,18 @@ class FaceNetWithClassifierPredictor:
     ages_train = [ages[files.index(f)] for ii, f in enumerate(files_train)]
     ages_test = [ages[files.index(f)] for ii, f in enumerate(files_test)]
     
+    self.files_train = files_train
+    self.files_test = files_test
+    
     self.ages_train = ages_train
     self.ages_test = ages_test
     
-    self.labels_train - labels_train
+    self.labels_train = labels_train
     self.labels_test = labels_test
     
   # dataframe after splitting the dataset
   def make_dataframe(self, embeddings, labels, ages, files):
-    return pd.DataFrame(dict(face_id=list(range(len(embeddings)), labels=labels, ages=ages, files=files)))
+    return pd.DataFrame(dict(face_id=list(range(len(embeddings))), name=labels, age=ages, files=files))
   
   def make_data(self, labels_train, embeddings_train, data):
     copy_classes = copy(labels_train)
@@ -177,7 +255,7 @@ class FaceNetWithClassifierPredictor:
     face_classes_array_train = []
     for name, counter_class in tqdm(dict(Counter(copy_classes)).items()):
         df = data[
-            data['identity'] == name
+            data['name'] == name
         ]
         for idx, row in df.iterrows():
             faces_chunk_train.append(embeddings_train[row['face_id']])
@@ -192,7 +270,7 @@ class FaceNetWithClassifierPredictor:
   def make_data_age(self, labels_train, embeddings_train, data, age_low, age_high):
     from copy import copy
     from collections import Counter
-
+    
     copy_classes = copy(labels_train)
     faces_chunk_train_age = []
     faces_chunk_array_train_age = []
@@ -202,12 +280,13 @@ class FaceNetWithClassifierPredictor:
     faces_chunk_array_test_age = []
     face_classes_test_age = []
     face_classes_array_test_age = []
+    
     for name, counter_class in tqdm(dict(Counter(copy_classes)).items()):
         df1 = data[
-            (data['identity'] == name) & (data['age'] >= age_low)
+            (data['name'] == name) & (data['age'] <= age_low)
         ]
         df2 = data[
-            (data['identity'] == name) & (data['age'] <= age_high)
+            (data['name'] == name) & (data['age'] >= age_high)
         ]
         if len(df1) == 0 or len(df2) == 0:
             continue
@@ -227,4 +306,4 @@ class FaceNetWithClassifierPredictor:
         faces_chunk_train_age = []
         face_classes_train_age = []
     
-    return face_classes_array_train_age, faces_chunk_array_train_age
+    return faces_chunk_array_train_age, face_classes_array_train_age
