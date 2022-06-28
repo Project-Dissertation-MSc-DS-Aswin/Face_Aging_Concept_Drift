@@ -50,6 +50,7 @@ args.experiment_id = os.environ.get('experiment_id', 0)
 args.drift_source_filename = os.environ.get('drift_source_filename', constants.AGEDB_DRIFT_SOURCE_FILENAME)
 args.pca_type = os.environ.get('pca_type', 'PCA')
 args.bins = os.environ.get('bins', np.ceil(0.85 * 239))
+args.noise_error = os.environ.get('noise_error', 0)
 args.mode = os.environ.get('mode', 'image_reconstruction')
 
 parameters = list(
@@ -71,6 +72,7 @@ args.preprocess_prewhiten = int(args.preprocess_prewhiten)
 args.no_of_samples = int(args.no_of_samples)
 args.no_of_pca_samples = int(args.no_of_pca_samples)
 args.bins = int(args.bins)
+args.noise_error = int(args.noise_error)
 
 def images_covariance(images_new, no_of_images):
     images_cov = np.cov(images_new.reshape(no_of_images, -1))
@@ -149,7 +151,7 @@ if __name__ == "__main__":
     model_loader = KerasModelLoader(whylogs, args.model, input_shape=(-1,160,160,3))
     model_loader.load_model()
 
-    dataset, augmentation_generator = load_dataset(args, whylogs, (49,49), args.no_of_pca_samples, 'grayscale')
+    dataset, augmentation_generator = load_dataset(args, whylogs, (96,96), args.no_of_pca_samples, 'grayscale')
     experiment_dataset, augmentation_generator = load_dataset(args, whylogs, (160,160), args.no_of_samples, 'rgb')
     
     pca_args = copy(args)
@@ -163,12 +165,16 @@ if __name__ == "__main__":
     )
 
     images_bw = collect_images(dataset.iterator)
+    if args.noise_error:
+        np.random.seed(1000)
+        print("Adding error in b/w images of " + str(args.noise_error))
+        images_bw += np.random.normal(0, args.noise_error, size=(images_bw.shape))
     images_new = demean_images(images_bw, len(dataset))
     if not os.path.isfile(args.pca_covariates_pkl):
         images_cov = images_covariance(images_new, len(images_new))
         P, pca, X_pca = pca_covariates(images_cov, args.pca_type)
         
-        pickle.dump(pca, open(args.pca_covariates_pkl, "wb"))
+        # pickle.dump(pca, open(args.pca_covariates_pkl, "wb"))
     else:
         pca = pickle.load(open(args.pca_covariates_pkl, "rb"))
 
@@ -181,6 +187,10 @@ if __name__ == "__main__":
     index = experiment.dataset.metadata['age'].reset_index()
 
     images = collect_images(experiment_dataset.iterator)
+    if args.noise_error:
+        np.random.seed(1000)
+        print("Adding error of " + str(args.noise_error))
+        images += np.random.normal(0, args.noise_error, size=(images.shape))
     eigen_vectors = experiment.eigen_vectors()
     b_vector = experiment.eigen_vector_coefficient(eigen_vectors, images_new)
     if args.mode == 'image_reconstruction':
@@ -199,12 +209,12 @@ if __name__ == "__main__":
             Real Error: {real_error}
             """.format(error=error, real_error=real_error))
         
-    elif args.mode == 'image_perturbation':
-        weights_vector = weights_vector_perturbation(self, reduced_metadata, b_vector, init_offset=0)
+    # elif args.mode == 'image_perturbation':
+    #     weights_vector = weights_vector_perturbation(self, reduced_metadata, b_vector, init_offset=0)
         
     
     choices_array = None
-    offset_range = np.arange(100, -100, -200)
+    offset_range = np.arange(0.1, -0.1, -0.2)
     if args.log_images == 's3':
 
         experiment.dataset.metadata['identity_grouping_distance'] = 0.0
@@ -218,31 +228,31 @@ if __name__ == "__main__":
         elif args.grouping_distance_type == 'DIST':
             experiment.dataset.metadata = experiment.set_hash_sample_by_dist(experiment.dataset.metadata['identity_grouping_distance'])
         
-        figures, choices_array = experiment.plot_images_with_eigen_faces(
-            images, images_new, weights_vector, offset, b_vector, offset_range, P_pandas, index
-        )
+    #     figures, choices_array = experiment.plot_images_with_eigen_faces(
+    #         images, images_new, weights_vector, offset, b_vector, offset_range, P_pandas, index
+    #     )
         
-        hash_samples = np.unique(experiment.dataset.metadata['hash_sample'])
+    #     hash_samples = np.unique(experiment.dataset.metadata['hash_sample'])
         
-        experiment_name = "FaceNet with Aging Drift (modified)"
-        mlflow_experiment = mlflow.get_experiment_by_name(experiment_name)
-        experiment_id = None
-        if experiment is not None:
-            experiment_id = mlflow_experiment.experiment_id
+    #     experiment_name = "FaceNet with Aging Drift (modified)"
+    #     mlflow_experiment = mlflow.get_experiment_by_name(experiment_name)
+    #     experiment_id = None
+    #     if experiment is not None:
+    #         experiment_id = mlflow_experiment.experiment_id
         
-        if experiment_id is None:
-            experiment_id = mlflow.create_experiment(experiment_name)
-        with mlflow.start_run(experiment_id=experiment_id):
-            # hash_sample
-            for ii, figure in enumerate(figures):
-                # offset range
-                for jj, fig in enumerate(figure):
-                    # aging function
-                    fig1, fig2, fig3, imgs, ages = tuple(fig)
-                    mlflow.log_figure(fig1, """{0}/hash_sample_{1}/offset_{2}_{3}.png""".format(args.logger_name, str(hash_samples[ii]), str(jj), 'aging'))
-                    mlflow.log_figure(fig2, """{0}/hash_sample_{1}/offset_{2}_{3}.png""".format(args.logger_name, str(hash_samples[ii]), str(jj), 'actual'))
-                    mlflow.log_figure(fig3, """{0}/hash_sample_{1}/offset_{2}_{3}.png""".format(args.logger_name, str(hash_samples[ii]), str(jj), 'predicted'))
-                    os.makedirs("""{0}/hash_sample_{1}""".format(args.logger_name, str(hash_samples[ii])), exist_ok=True)
+    #     if experiment_id is None:
+    #         experiment_id = mlflow.create_experiment(experiment_name)
+    #     with mlflow.start_run(experiment_id=experiment_id):
+    #         # hash_sample
+    #         for ii, figure in enumerate(figures):
+    #             # offset range
+    #             for jj, fig in enumerate(figure):
+    #                 # aging function
+    #                 fig1, fig2, fig3, imgs, ages = tuple(fig)
+    #                 mlflow.log_figure(fig1, """{0}/hash_sample_{1}/offset_{2}_{3}.png""".format(args.logger_name, str(hash_samples[ii]), str(jj), 'aging'))
+    #                 mlflow.log_figure(fig2, """{0}/hash_sample_{1}/offset_{2}_{3}.png""".format(args.logger_name, str(hash_samples[ii]), str(jj), 'actual'))
+    #                 mlflow.log_figure(fig3, """{0}/hash_sample_{1}/offset_{2}_{3}.png""".format(args.logger_name, str(hash_samples[ii]), str(jj), 'predicted'))
+    #                 os.makedirs("""{0}/hash_sample_{1}""".format(args.logger_name, str(hash_samples[ii])), exist_ok=True)
                 
     voting_classifier_array = pickle.load(open(args.classifier, 'rb'))
     
