@@ -52,6 +52,8 @@ args.pca_type = os.environ.get('pca_type', 'PCA')
 args.bins = os.environ.get('bins', np.ceil(0.85 * 239))
 args.noise_error = os.environ.get('noise_error', 0)
 args.mode = os.environ.get('mode', 'image_reconstruction')
+args.drift_beta = os.environ.get('drift_beta', 1)
+args.covariates_beta = os.environ.get('covariates_beta', 1)
 
 parameters = list(
     map(lambda s: re.sub('$', '"', s),
@@ -73,6 +75,8 @@ args.no_of_samples = int(args.no_of_samples)
 args.no_of_pca_samples = int(args.no_of_pca_samples)
 args.bins = int(args.bins)
 args.noise_error = int(args.noise_error)
+args.drift_beta = float(args.drift_beta)
+args.covariates_beta = float(args.covariates_beta)
 
 def images_covariance(images_new, no_of_images):
     images_cov = np.cov(images_new.reshape(no_of_images, -1))
@@ -93,9 +97,10 @@ def collect_images(train_iterator):
 
     return np.vstack(images_bw)
 
-def pca_covariates(images_cov, pca_type='PCA'):
+def pca_covariates(images_cov, pca_type='PCA', covariates_beta=1, seed=1000):
     pca = KernelPCA(n_components=images_cov.shape[0], kernel='poly') if pca_type == 'KernelPCA' else PCA(n_components=images_cov.shape[0])
-    X_pca = pca.fit_transform(images_cov)
+    np.random.seed(seed)
+    X_pca = pca.fit_transform(images_cov * np.random.normal(0, covariates_beta, size=images_cov.shape) if covariates_beta else images_cov)
     return pca.components_.T if pca_type == 'PCA' else pca.eigenvectors_, pca, X_pca
 
 def isomap_images(images_bw):
@@ -138,8 +143,13 @@ def get_reduced_metadata(args, dataset, seed=1000):
         
         return dataset.metadata.loc[result_idx].reset_index()
     elif args.mode == 'image_perturbation':
-        np.random.seed(seed)
-        return dataset.metadata.sample(args.no_of_samples).reset_index()
+        filenames = pd.read_csv(args.drift_source_filename)
+        idx = [dataset.metadata['filename'] == filename for filename in filenames['filename']]
+        result_idx = [False]*len(dataset.metadata)
+        for i in idx:
+            result_idx = np.logical_or(result_idx, i)
+        
+        return dataset.metadata.loc[result_idx].reset_index()
   elif args.dataset == "cacd":
     np.random.seed(seed)
     return dataset.metadata.sample(args.no_of_samples).reset_index()
@@ -172,7 +182,7 @@ if __name__ == "__main__":
     images_new = demean_images(images_bw, len(dataset))
     if not os.path.isfile(args.pca_covariates_pkl):
         images_cov = images_covariance(images_new, len(images_new))
-        P, pca, X_pca = pca_covariates(images_cov, args.pca_type)
+        P, pca, X_pca = pca_covariates(images_cov, args.pca_type, args.covariates_beta)
         
         # pickle.dump(pca, open(args.pca_covariates_pkl, "wb"))
     else:
@@ -209,12 +219,14 @@ if __name__ == "__main__":
             Real Error: {real_error}
             """.format(error=error, real_error=real_error))
         
-    # elif args.mode == 'image_perturbation':
-    #     weights_vector = weights_vector_perturbation(self, reduced_metadata, b_vector, init_offset=0)
+        print("Taken image_reconstruction choice")
         
-    
-    choices_array = None
-    offset_range = np.arange(0.1, -0.1, -0.2)
+    elif args.mode == 'image_perturbation':
+        # weights vector dimensions
+        weights_vector = experiment.weights_vector_perturbation(experiment.dataset.metadata, b_vector, init_offset=0)
+        offset = 0
+        
+    offset_range = np.arange(0.01, -0.01, -0.02)
     if args.log_images == 's3':
 
         experiment.dataset.metadata['identity_grouping_distance'] = 0.0
@@ -253,16 +265,16 @@ if __name__ == "__main__":
     #                 mlflow.log_figure(fig2, """{0}/hash_sample_{1}/offset_{2}_{3}.png""".format(args.logger_name, str(hash_samples[ii]), str(jj), 'actual'))
     #                 mlflow.log_figure(fig3, """{0}/hash_sample_{1}/offset_{2}_{3}.png""".format(args.logger_name, str(hash_samples[ii]), str(jj), 'predicted'))
     #                 os.makedirs("""{0}/hash_sample_{1}""".format(args.logger_name, str(hash_samples[ii])), exist_ok=True)
-                
+    
     voting_classifier_array = pickle.load(open(args.classifier, 'rb'))
     
     predictions_classes_array = experiment.collect_drift_predictions(images, images_new, 
                                         weights_vector, offset, b_vector, offset_range, P_pandas, index, 
-                                        voting_classifier_array, model_loader, choices_array=choices_array)
+                                        voting_classifier_array, model_loader, drift_beta=args.drift_beta, covariates_beta=args.covariates_beta)
     
     np.save(open('predictions_classes_array.npy', 'wb'), np.array(predictions_classes_array))
     predictions_classes = pd.DataFrame(predictions_classes_array, 
-                        columns=['hash_sample', 'offset', 'true_identity', 'age', 'filename', 
+                        columns=['hash_sample', 'offset', 'covariates_beta', 'drift_beta', 'true_identity', 'age', 'filename', 
                         'y_pred', 'y_drift', 'predicted_age', 'euclidean', 'cosine', 'identity_grouping_distance', 
                         'orig_TP', 'orig_FN', 'virtual_TP', 'virtual_FN', 'stat_TP', 'stat_FP', 'stat_undefined'])
     

@@ -14,6 +14,7 @@ from concurrent.futures import ThreadPoolExecutor
 from skimage.util import random_noise
 from skimage.metrics import peak_signal_noise_ratio, mean_squared_error
 import scipy.stats
+from sklearn.preprocessing import MinMaxScaler
 
 # use Agg backend to suppress the plot shown in command line
 matplotlib.use('Agg')
@@ -122,6 +123,12 @@ class DriftSynthesisByEigenFacesExperiment:
         
         return w, o, mean_age, std_age, age
     
+    def aging_manifold(self, weights_vector, b_vector, init_offset=None, mode='image_reconstruction'):
+        if mode == 'image_reconstruction':
+            return self.aging_function(weights_vector, b_vector, init_offset)
+        elif mode == 'image_perturbation':
+            return self.aging_function_perturbation(weights_vector, b_vector, init_offset)
+    
     def aging_function(self, weights_vector, b_vector, init_offset=None):
         if init_offset is None:
             init_offset = self.init_offset
@@ -132,13 +139,13 @@ class DriftSynthesisByEigenFacesExperiment:
     def weights_vector_perturbation(self, reduced_metadata, b_vector, init_offset=0):
         if not init_offset:
             init_offset = self.init_offset
-        w = (reduced_metadata['age'] - init_offset).dot(np.linalg.inv(b_vector))
+        w = np.linalg.pinv(b_vector).dot(reduced_metadata['age'] - init_offset)
         return w
 
     def aging_function_perturbation(self, weights_vector, b_vector, init_offset=0):
         if not init_offset:
             init_offset = self.init_offset
-        return weights_vector.T.dot(b_vector) + init_offset
+        return b_vector.dot(weights_vector) + init_offset
     
     def plot_images_with_eigen_faces(self, images, images_demean, weights_vector, offset_vector, b_vector, offset_range, P_pandas, index):
         figures = []
@@ -213,7 +220,7 @@ class DriftSynthesisByEigenFacesExperiment:
 
     def collect_drift_predictions(self, images, images_demean, weights_vector, offset_vector, 
                                   b_vector, offset_range, P_pandas, index, 
-                                  voting_classifier_array, model_loader, choices_array=None):
+                                  voting_classifier_array, model_loader, drift_beta=1, covariates_beta=100):
         
         predictions_classes_array = []
         
@@ -225,7 +232,7 @@ class DriftSynthesisByEigenFacesExperiment:
                     np.sum(self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'identity_grouping_distance'])
             for offset in offset_range:
                 f_new = self.dataset.metadata['identity_grouping_distance'] * (
-                    self.aging_function(weights_vector, b_vector, offset)  if self.args.mode == 'image_reconstruction' else self.aging_function_perturbation(weights_vector, b_vector, 0)
+                    self.aging_function(weights_vector, b_vector, offset)  if self.args.mode == 'image_reconstruction' else self.aging_function_perturbation(weights_vector, b_vector, offset)
                 )
                 f_p_new = f_new[self.dataset.metadata['hash_sample'] == i] / \
                         np.sum(self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'identity_grouping_distance'])
@@ -251,7 +258,7 @@ class DriftSynthesisByEigenFacesExperiment:
                     orig_image = images[self.dataset.metadata['hash_sample'] == i].reshape(-1, self.experiment_dataset.dim[0], 
                                                                                         self.experiment_dataset.dim[1], 3)[choice]
                     image = model_loader.resize(image)
-                    output_image = orig_image - 1e-6 * image
+                    output_image = orig_image - drift_beta * image
                     # output_image = np.concatenate([np.expand_dims(output_image, 2)]*3, 2)
                     # output_image = model_loader.resize(output_image)
                     # orig_image = model_loader.resize(orig_image)
@@ -308,7 +315,7 @@ class DriftSynthesisByEigenFacesExperiment:
                         pred_virtual = -1
                         pred_orig = -1
                     
-                    data.append([i, offset, 
+                    data.append([i, offset, covariates_beta, drift_beta,
                         # identity
                         self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'name'].iloc[choice], 
                         # age
@@ -416,8 +423,11 @@ class DriftSynthesisByEigenFacesExperiment:
                 covariance = np.cov(denoised/255., residual_img/255.)
                 covariance_orig = np.cov(denoised_orig/255., residual_orig/255.)
                 
-                corr = covariance / (np.std(denoised/255.) * np.std(residual_img/255.)) / 500.
-                corr_orig = covariance_orig / (np.std(denoised_orig/255.) * np.std(residual_orig/255.)) / 500.
+                corr = covariance[self.dataset.dim[0]:, :self.dataset.dim[1]] / (np.std(denoised/255.) * np.std(residual_img/255.))
+                corr_orig = covariance_orig[self.dataset.dim[0]:, :self.dataset.dim[1]] / (np.std(denoised_orig/255.) * np.std(residual_orig/255.))
+                
+                corr = MinMaxScaler(feature_range=(-0.99,0.99)).fit_transform(corr)
+                corr_orig = MinMaxScaler(feature_range=(-0.99,0.99)).fit_transform(corr_orig)
                 
                 mse_corr = mean_squared_error(corr, corr_orig)
                 
