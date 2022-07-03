@@ -12,11 +12,24 @@ from collections import OrderedDict
 
 def collect_data(model_loader, train_iterator):
   res_images = []
+  y_classes = []
   # Get input and output tensors
+  print(len(train_iterator))
   for i in tqdm(range(len(train_iterator))):
-    X, y = train_iterator[i]
-    res_images.append(model_loader.infer(l2_normalize(prewhiten(X))))
-    
+    X, (y, ) = train_iterator[i]
+    y_classes += y.tolist()
+  classes_counter = 0
+  for i in tqdm(range(len(train_iterator)-1)):
+    X, (y, ) = train_iterator[i]
+    # res_images.append(model_loader.infer(l2_normalize(prewhiten(X))))
+    classes = y
+    unq_classes = np.unique(classes)
+    y_valid = np.zeros((len(y), 435))
+    for c in unq_classes:
+      y_valid[classes==c, classes_counter]
+      classes_counter += 1
+    res_images.append(model_loader.infer([X/255., y_valid]))
+
   return res_images
 
 class FaceNetWithoutAgingExperiment:
@@ -36,11 +49,11 @@ class FaceNetWithoutAgingExperiment:
   def set_model_loader(self, model_loader):
     self.model_loader = model_loader
     
-  def collect_data(self, data_collection_pkl, data_dir, batch_size):
+  def collect_data(self, data_collection_pkl, data_dir, batch_size, iterator=None):
     if os.path.isfile(data_collection_pkl):
       embeddings = pickle.load(data_collection_pkl)
     else:
-      embeddings = collect_data(self.model_loader, self.dataset.iterator)
+      embeddings = collect_data(self.model_loader, self.dataset.iterator if iterator is None else iterator)
       
     return tf.concat(embeddings, axis=0)
   

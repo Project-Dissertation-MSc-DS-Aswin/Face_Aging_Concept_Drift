@@ -1,7 +1,7 @@
 import sys
 import os
 import tensorflow as tf
-from tensorflow.keras.models import load_model
+from tensorflow.keras.models import load_model, Model
 from keras.preprocessing.image import ImageDataGenerator
 import cv2
 from pipeline.context import Constants
@@ -54,3 +54,18 @@ class KerasModelLoader:
   
   def resize(self, data):
     return cv2.resize(data, (self.input_w, self.input_h))
+  
+class FaceNetKerasModelLoader(KerasModelLoader):
+  pass
+
+class FaceRecognitionBaselineKerasModelLoader(KerasModelLoader):
+  """
+  Load the Keras Model from model_path
+  """
+  def load_model(self):
+    print(os.path.isfile(self.model_path))
+    self.model = load_model(self.model_path, compile=False)
+    self.model = Model(inputs=self.model.inputs, outputs=self.model.layers[-6].output)
+    self.logger.log({
+      "keras_model_summary": self.model.summary()
+    })
