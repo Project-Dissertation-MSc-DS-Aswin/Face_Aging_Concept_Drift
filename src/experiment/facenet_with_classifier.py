@@ -19,7 +19,32 @@ from sklearn.ensemble import VotingClassifier
 from mlflow.tracking import MlflowClient
 from mlflow.tracking.fluent import _get_or_start_run
 
-def collect_data(model_loader, train_iterator):
+def collect_data_face_recognition_keras(model_loader, train_iterator):
+  res_images = []
+  y_classes = []
+  files = []
+  ages = []
+  labels = []
+  # Get input and output tensors
+  print(len(train_iterator))
+  classes_counter = 0
+  for i in tqdm(range(len(train_iterator)-1)):
+    X, (y_age, y_filename, y_label) = train_iterator[i]
+    # res_images.append(model_loader.infer(l2_normalize(prewhiten(X))))
+    classes = y_label
+    unq_classes = np.unique(classes)
+    y_valid = np.zeros((len(y_label), 435))
+    for c in unq_classes:
+      y_valid[classes==c, classes_counter] = 1
+      classes_counter += 1
+    res_images.append(model_loader.infer([X/255., y_valid]))
+    labels += y_label.tolist()
+    files += y_filename.tolist()
+    ages += y_age.tolist()
+
+  return res_images, files, ages, labels
+
+def collect_data_facenet_keras(model_loader, train_iterator):
   res_images = []
   files = []
   ages = []
@@ -51,19 +76,22 @@ class FaceNetWithClassifierExperiment:
   def set_model_loader(self, model_loader):
     self.model_loader = model_loader
     
-  def collect_data(self, data_collection_pkl, face_classification_iterator):
+  def collect_data(self, data_collection_pkl, face_classification_iterator, model=None):
     if os.path.isfile(data_collection_pkl):
       embeddings = pickle.load(data_collection_pkl)
-    else:
-      embeddings, files, ages, labels = collect_data(self.model_loader, face_classification_iterator)
+    elif model == 'FaceNetKeras':
+      embeddings, files, ages, labels = collect_data_facenet_keras(self.model_loader, face_classification_iterator)
+    elif model == 'FaceRecognitionBaselineKeras':
+      embeddings, files, ages, labels = collect_data_face_recognition_keras(self.model_loader, face_classification_iterator)
       
     return tf.concat(embeddings, axis=0), files, ages, labels
   
 
 class FaceNetWithClassifierPredictor:
   
-  def __init__(self, metadata):
+  def __init__(self, metadata, model_loader):
     self.metadata = metadata
+    self.model_loader = model_loader
     
   def train_and_fit(self, faces_chunk_array_train, face_classes_array_train, 
                     base_estimators, svm_embedding_array, 
@@ -189,7 +217,7 @@ class FaceNetWithClassifierPredictor:
               matches = 0
               for j in range(len(voting_classifier_array_copy)):
                   voting_classifier = voting_classifier_array_copy[j]
-                  faces_classes_pred = voting_classifier.predict(faces_data[k].reshape(-1,128))
+                  faces_classes_pred = voting_classifier.predict(faces_data[k].reshape(-1,self.model_loader.dimensions))
                   matches += (faces_classes_pred == face_classes[k]).sum()
               true_positives += 1 if matches == 1 else 0
               false_negatives += 0 if matches == 1 else 1
@@ -203,7 +231,7 @@ class FaceNetWithClassifierPredictor:
             matches = 0
             for j in range(len(voting_classifier_array_copy)):
                 voting_classifier = voting_classifier_array_copy[j]
-                faces_classes_pred = voting_classifier.predict(embeddings_test[row['face_id']].reshape(-1,128))
+                faces_classes_pred = voting_classifier.predict(embeddings_test[row['face_id']].reshape(-1,self.model_loader.dimensions))
                 matches += (faces_classes_pred == name).sum()
             true_positives += 1 if matches == 1 else 0
             false_negatives += 0 if matches == 1 else 1
@@ -214,7 +242,11 @@ class FaceNetWithClassifierPredictor:
   
   def make_train_test_split(self, embeddings, files, ages, labels, seed=1000):
     np.random.seed(1000)
-    files_train = self.metadata.sample(int(0.9*len(embeddings)))['filename'].values
+    df = pd.DataFrame(columns=['files', 'ages', 'labels'])
+    df['files'] = files
+    df['ages'] = ages
+    df['labels'] = labels
+    files_train = df.sample(int(0.9*len(embeddings)))['files'].values
     files_test = [f for ii, f in enumerate(files) if f not in files_train.tolist()]
     index_train = [files.index(f) for ii, f in enumerate(files_train)]
     index_test = [files.index(f) for ii, f in enumerate(files_test)]

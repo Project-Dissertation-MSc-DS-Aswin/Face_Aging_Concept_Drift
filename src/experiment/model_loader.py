@@ -26,6 +26,7 @@ def get_augmented_datasets():
   return augmentation_generator
 
 class KerasModelLoader:
+  dimensions = 128
   
   def __init__(self, logger, model_path, input_shape=None):
     self.logger = logger
@@ -59,6 +60,8 @@ class FaceNetKerasModelLoader(KerasModelLoader):
   pass
 
 class FaceRecognitionBaselineKerasModelLoader(KerasModelLoader):
+  dimensions = 717
+  
   """
   Load the Keras Model from model_path
   """

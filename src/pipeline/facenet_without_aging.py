@@ -30,6 +30,7 @@ Arguments to the pipeline
 """
 args.dataset = os.environ.get('dataset', 'agedb')
 args.model = os.environ.get('model', 'FaceNetKeras')
+args.model_path = os.environ.get('model_path', 'facenet_keras.h5')
 args.data_dir = os.environ.get('data_dir', constants.AGEDB_DATADIR)
 args.batch_size = int(os.environ.get('batch_size', 128))
 args.preprocess_whiten = int(os.environ.get('preprocess_whiten', 1))
@@ -103,9 +104,9 @@ def load_dataset(args, whylogs, input_shape=(-1,160,160,3)):
 if __name__ == "__main__":
 
   if args.model == 'FaceNetKeras':
-    model_loader = FaceNetKerasModelLoader(whylogs, input_shape=args.input_shape)
+    model_loader = FaceNetKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
   elif args.model == 'FaceRecognitionBaselineKeras':
-    model_loader = FaceRecognitionBaselineKerasModelLoader(whylogs, input_shape=args.input_shape)
+    model_loader = FaceRecognitionBaselineKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
   
   model_loader.load_model()
   
@@ -123,7 +124,7 @@ if __name__ == "__main__":
   """
   Collect Data
   """
-  embeddings = experiment.collect_data(args.data_collection_pkl, args.data_dir, args.batch_size, iterator=iterator)
+  embeddings = experiment.collect_data(args.data_collection_pkl, args.data_dir, args.batch_size, iterator=iterator, model=args.model)
 
   result_euclidean_distances, result_cosine_similarities = experiment.calculate_face_distance(embeddings)
 

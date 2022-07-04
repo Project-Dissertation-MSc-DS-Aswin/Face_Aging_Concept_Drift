@@ -10,7 +10,16 @@ import numpy as np
 import pandas as pd
 from collections import OrderedDict
 
-def collect_data(model_loader, train_iterator):
+def collect_data_facenet_keras(model_loader, train_iterator):
+  res_images = []
+  # Get input and output tensors
+  for i in tqdm(range(len(train_iterator))):
+    X, y = train_iterator[i]
+    res_images.append(model_loader.infer(l2_normalize(prewhiten(X))))
+
+  return res_images
+
+def collect_data_face_recognition_baseline(model_loader, train_iterator):
   res_images = []
   y_classes = []
   # Get input and output tensors
@@ -49,11 +58,13 @@ class FaceNetWithoutAgingExperiment:
   def set_model_loader(self, model_loader):
     self.model_loader = model_loader
     
-  def collect_data(self, data_collection_pkl, data_dir, batch_size, iterator=None):
+  def collect_data(self, data_collection_pkl, iterator=None, model=None):
     if os.path.isfile(data_collection_pkl):
       embeddings = pickle.load(data_collection_pkl)
-    else:
-      embeddings = collect_data(self.model_loader, self.dataset.iterator if iterator is None else iterator)
+    elif model == 'FaceNetKeras':
+      embeddings = collect_data_facenet_keras(self.model_loader, self.dataset.iterator if iterator is None else iterator)
+    elif model == 'FaceRecognitionBaselineKeras':
+      embeddings = collect_data_face_recognition_baseline(self.model_loader, self.dataset.iterator if iterator is None else iterator)
       
     return tf.concat(embeddings, axis=0)
   

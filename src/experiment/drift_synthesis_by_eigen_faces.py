@@ -399,8 +399,14 @@ class DriftSynthesisByEigenFacesExperiment:
                 image = np.concatenate([np.expand_dims(image, 2)]*3, 2)
                 image = model_loader.resize(image)
                 output_image = self.drift_type_function(drift_type, orig_image, image, beta=drift_beta)
-                res1 = l2_normalize(prewhiten(output_image)).reshape(*model_loader.input_shape)
-                res2 = l2_normalize(prewhiten(orig_image)).reshape(*model_loader.input_shape)
+                if self.args.model == 'FaceNetKeras':
+                    res1 = l2_normalize(prewhiten(output_image)).reshape(*model_loader.input_shape)
+                elif self.args.model == 'FaceRecognitionBaselineKeras':
+                    res1 = output_image.reshape(*model_loader.input_shape)
+                if self.args.model == 'FaceNetKeras':
+                    res2 = l2_normalize(prewhiten(orig_image)).reshape(*model_loader.input_shape)
+                elif self.args.model == 'FaceRecognitionBaselineKeras':
+                    res2 = orig_image.reshape(*model_loader.input_shape)
                 
                 res1_images.append(res1)
                 res2_images.append(res2)
@@ -479,8 +485,39 @@ class DriftSynthesisByEigenFacesExperiment:
         all_res1_images = np.vstack(res1_images)
         all_res2_images = np.vstack(res2_images)
         
-        inference_images = model_loader.infer(all_res1_images)
-        inference_images_orig = model_loader.infer(all_res2_images)
+        names = self.get_name_from_filename(cols, dataset='agedb')
+        names = np.array(names)
+        
+        data = [np.zeros((len(all_res1_images), 72, 72, 3)), np.zeros((len(all_res1_images), 435))]
+        
+        classes_counter = 0
+        idx_counter = 0
+        for name in np.unique(names):
+            data[0][idx_counter:idx_counter+len(np.where(names==name)[0])] = all_res1_images[np.where(names==name)[0]]
+            data[1][names==name, classes_counter] = 1
+            classes_counter += 1
+            idx_counter += len(np.where(names==name)[0])
+            
+        inference_images = []
+        for i in range(len(data[0])//128):
+            inference_images.append(model_loader.model([data[0][i*128:(i+1)*128]/255., data[1][i*128:(i+1)*128]]))
+        
+        inference_images = np.vstack(inference_images)
+        
+        data = [np.zeros((len(all_res2_images), 72, 72, 3)), np.zeros((len(all_res2_images), 435))]
+        classes_counter = 0
+        idx_counter = 0
+        for name in np.unique(names):
+            data[0][idx_counter:idx_counter+len(np.where(names==name)[0])] = all_res2_images[np.where(names==name)[0]]
+            data[1][names==name, classes_counter] = 1
+            classes_counter += 1
+            idx_counter += len(np.where(names==name)[0])
+        
+        inference_images_orig = []
+        for i in range(len(data[0])//128):
+            inference_images_orig.append(model_loader.model([data[0][i*128:(i+1)*128]/255., data[1][i*128:(i+1)*128]]))
+            
+        inference_images_orig = np.vstack(inference_images_orig)
         
         # if len(voting_classifier_array) > 0:
         #     matches = np.zeros((len(voting_classifier_array), len(all_res1_images)))

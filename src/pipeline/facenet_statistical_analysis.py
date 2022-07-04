@@ -9,7 +9,7 @@ import whylogs
 import mlflow
 from datasets import CACD2000Dataset, FGNETDataset, AgeDBDataset
 from experiment.drift_synthesis_by_eigen_faces import DriftSynthesisByEigenFacesExperiment
-from experiment.model_loader import KerasModelLoader
+from experiment.model_loader import FaceNetKerasModelLoader, FaceRecognitionBaselineKerasModelLoader
 from experiment.model_loader import get_augmented_datasets, preprocess_data_facenet_without_aging
 from tqdm import tqdm
 from copy import copy
@@ -30,7 +30,8 @@ constants = Constants()
 args = Args({})
 
 args.dataset = os.environ.get('dataset', 'agedb')
-args.model = os.environ.get('model', 'facenet_keras.h5')
+args.model = os.environ.get('model', 'FaceNetKeras')
+args.model_path = os.environ.get('model_path', 'facenet_keras.h5')
 args.data_dir = os.environ.get('data_dir', constants.AGEDB_DATADIR)
 args.batch_size = os.environ.get('batch_size', 128)
 args.preprocess_prewhiten = os.environ.get('preprocess_prewhiten', 1)
@@ -48,6 +49,7 @@ args.noise_error = os.environ.get('noise_error', 25)
 args.drift_beta = os.environ.get('drift_beta', 0)
 args.mode = os.environ.get('mode', 'image_reconstruction')
 args.inference_images_pkl = os.environ.get('inference_images_pkl', constants.AGEDB_FACENET_INFERENCES)
+args.input_shape = os.environ.get('input_shape', (-1,160,160,3))
 
 parameters = list(
     map(lambda s: re.sub('$', '"', s),
@@ -70,6 +72,10 @@ args.no_of_pca_samples = int(args.no_of_pca_samples)
 args.noise_error = float(args.noise_error)
 args.psnr_error = float(args.psnr_error)
 args.drift_beta = float(args.drift_beta)
+if type(args.input_shape) == str:
+    input_shape = args.input_shape.replace('(','').replace(')','').split(",")
+    args.input_shape = tuple([int(s) for s in input_shape if s.strip() != '' or s.strip() != ','])
+    print(args.input_shape)
 
 def images_covariance(images_new, no_of_images):
     images_cov = np.cov(images_new.reshape(no_of_images, -1))
@@ -94,15 +100,6 @@ def pca_covariates(images_cov, pca_type='PCA'):
     pca = KernelPCA(n_components=images_cov.shape[0], kernel='poly') if pca_type == 'KernelPCA' else PCA(n_components=images_cov.shape[0])
     X_pca = pca.fit_transform(images_cov)
     return pca.components_.T if pca_type == 'PCA' else pca.eigenvectors_, pca, X_pca
-
-def collect_images(train_iterator):
-    images = []
-    # Get input and output tensors
-    for ii in tqdm(range(len(train_iterator))):
-        (X, y) = train_iterator[ii]
-        images.append(X)
-
-    return np.vstack(images)
 
 def get_age_ranges(metadata, identity_key='name'):
     # Largest Age Range
@@ -224,11 +221,15 @@ if __name__ == "__main__":
     
     mlflow.set_tracking_uri(args.tracking_uri)
 
-    model_loader = KerasModelLoader(whylogs, args.model, input_shape=(-1,160,160,3))
+    if args.model == 'FaceNetKeras':
+        model_loader = FaceNetKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
+    elif args.model == 'FaceRecognitionBaselineKeras':
+        model_loader = FaceRecognitionBaselineKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
+    
     model_loader.load_model()
 
     dataset, augmentation_generator = load_dataset(args, whylogs, (96,96), args.no_of_pca_samples, 'grayscale')
-    experiment_dataset, augmentation_generator = load_dataset(args, whylogs, (160,160), args.no_of_samples, 'rgb')
+    experiment_dataset, augmentation_generator = load_dataset(args, whylogs, (args.input_shape[1], args.input_shape[2]), args.no_of_samples, 'rgb')
     
     metadata_copy = copy(dataset.metadata)
     
@@ -438,12 +439,12 @@ if __name__ == "__main__":
     # predictions_original_df = pd.DataFrame(predictions_original_list, columns=filenames)
     # predictions_virtual_df = pd.DataFrame(predictions_virtual_list, columns=filenames)
 
-    mse_p_array_df.to_csv("../data_collection/morph_mse_p_array_df.csv")
-    mse_t_array_df.to_csv("../data_collection/morph_mse_t_array_df.csv")
-    mse_corr_array_df.to_csv("../data_collection/morph_mse_corr_array_df.csv")
-    psnr_pca_df.to_csv("../data_collection/morph_psnr_pca_df.csv")
-    power_pca_df.to_csv("../data_collection/morph_power_pca_df.csv")
-    power_orig_df.to_csv("../data_collection/morph_power_orig_df.csv")
+    mse_p_array_df.to_csv("../data_collection/mse_p_array_df.csv")
+    mse_t_array_df.to_csv("../data_collection/mse_t_array_df.csv")
+    mse_corr_array_df.to_csv("../data_collection/mse_corr_array_df.csv")
+    psnr_pca_df.to_csv("../data_collection/psnr_pca_df.csv")
+    power_pca_df.to_csv("../data_collection/power_pca_df.csv")
+    power_orig_df.to_csv("../data_collection/power_orig_df.csv")
     
     # statistical_drift_true_positives_df.to_csv("../data_collection/statistical_drift_true_positives_df.csv")
     # statistical_drift_true_negatives_df.to_csv("../data_collection/statistical_drift_true_negatives_df.csv")

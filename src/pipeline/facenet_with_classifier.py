@@ -10,7 +10,7 @@ import whylogs
 import mlflow
 from datasets import CACD2000Dataset, FGNETDataset, AgeDBDataset
 from experiment.facenet_with_classifier import FaceNetWithClassifierExperiment, FaceNetWithClassifierPredictor
-from experiment.model_loader import KerasModelLoader
+from experiment.model_loader import FaceNetKerasModelLoader, FaceRecognitionBaselineKerasModelLoader
 from experiment.model_loader import get_augmented_datasets, preprocess_data_facenet_without_aging
 from sklearn.utils.fixes import loguniform
 from tqdm import tqdm
@@ -29,7 +29,8 @@ constants = Constants()
 args = Args({})
 
 args.dataset = os.environ.get('dataset', 'agedb')
-args.model = os.environ.get('model', 'facenet_keras.h5')
+args.model = os.environ.get('model', 'FaceNetKeras')
+args.model_path = os.environ.get('model_path', 'facenet_keras.h5')
 args.data_dir = os.environ.get('data_dir', constants.AGEDB_DATADIR)
 args.batch_size = os.environ.get('batch_size', 128)
 args.preprocess_prewhiten = os.environ.get('preprocess_prewhiten', 1)
@@ -44,6 +45,7 @@ args.classifier = os.environ.get('classifier', constants.AGEDB_FACE_CLASSIFIER)
 args.collect_for = os.environ.get('collect_for', 'age_drifting')
 args.drift_evaluate_metrics = os.environ.get('drift_evaluate_metrics', constants.AGEDB_DRIFT_EVALUATE_METRICS)
 args.experiment_id = os.environ.get("experiment_id", 1)
+args.input_shape = os.environ.get('input_shape', (-1,160,160,3))
 
 parameters = list(
     map(lambda s: re.sub('$', '"', s),
@@ -62,26 +64,32 @@ for parameter in parameters:
 args.batch_size = int(args.batch_size)
 args.preprocess_prewhiten = int(args.preprocess_prewhiten)
 args.no_of_samples = int(args.no_of_samples)
-# args.experiment_id = int(args.experiment_id)
+args.experiment_id = int(args.experiment_id)
+if type(args.input_shape) == str:
+    input_shape = args.input_shape.replace('(','').replace(')','').split(",")
+    args.input_shape = tuple([int(s) for s in input_shape if s.strip() != '' or s.strip() != ','])
+    print(args.input_shape)
 
-def load_dataset(args, whylogs, image_dim, no_of_samples, colormode):
+def load_dataset(args, whylogs, no_of_samples, colormode, input_shape=(-1,160,160,3)):
   
     dataset = None
     augmentation_generator = None
     if args.dataset == "agedb":
         augmentation_generator = get_augmented_datasets()
         dataset = AgeDBDataset(whylogs, args.metadata, list_IDs=list(range(no_of_samples)),
-                               color_mode=colormode, augmentation_generator=augmentation_generator, data_dir=args.data_dir, dim=image_dim, 
+                               color_mode=colormode, augmentation_generator=augmentation_generator, data_dir=args.data_dir, 
+                               dim=(input_shape[1],input_shape[2]), 
                                batch_size=args.batch_size)
     elif args.dataset == "cacd":
         augmentation_generator = get_augmented_datasets()
         dataset = CACD2000Dataset(whylogs, args.metadata, list_IDs=list(range(no_of_samples)),
                                   color_mode=colormode, augmentation_generator=augmentation_generator,
-                                  data_dir=args.data_dir, dim=image_dim, batch_size=args.batch_size)
+                                  data_dir=args.data_dir, dim=(input_shape[1],input_shape[2]), batch_size=args.batch_size)
     elif args.dataset == "fgnet":
         augmentation_generator = get_augmented_datasets()
         dataset = FGNETDataset(whylogs, args.metadata, list_IDs=None,
-                               color_mode=colormode, augmentation_generator=augmentation_generator, data_dir=args.data_dir, dim=image_dim, 
+                               color_mode=colormode, augmentation_generator=augmentation_generator, data_dir=args.data_dir, 
+                               dim=(input_shape[1],input_shape[2]), 
                                batch_size=args.batch_size)
 
     return dataset, augmentation_generator
@@ -108,10 +116,14 @@ if __name__ == "__main__":
   
     mlflow.set_tracking_uri(args.tracking_uri)
     
-    model_loader = KerasModelLoader(whylogs, args.model, input_shape=(-1,160,160,3))
+    if args.model == 'FaceNetKeras':
+      model_loader = FaceNetKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
+    elif args.model == 'FaceRecognitionBaselineKeras':
+      model_loader = FaceRecognitionBaselineKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
+    
     model_loader.load_model()
 
-    dataset, augmentation_generator = load_dataset(args, whylogs, (160,160), args.no_of_samples, 'rgb')
+    dataset, augmentation_generator = load_dataset(args, whylogs, args.no_of_samples, 'rgb', input_shape=args.input_shape)
     
     dataset.set_metadata(
         get_reduced_metadata(args, dataset)
@@ -119,12 +131,21 @@ if __name__ == "__main__":
     
     experiment = FaceNetWithClassifierExperiment(dataset, whylogs, model_loader)
     
-    face_classification_iterator = dataset.get_iterator_face_classificaton(
-      args.colormode, args.batch_size, args.data_dir, augmentation_generator, x_col='filename', y_cols=['age', 'filename', 'name']
-    )
+    if args.dataset == 'agedb':
+      face_classification_iterator = dataset.get_iterator_face_classificaton(
+        args.colormode, args.batch_size, args.data_dir, augmentation_generator, x_col='filename', y_cols=['age', 'filename', 'name']
+      )
+    elif args.dataset == 'cacd':
+      face_classification_iterator = dataset.get_iterator_face_classificaton(
+        args.colormode, args.batch_size, args.data_dir, augmentation_generator, x_col='filename', y_cols=['age', 'filename', 'identity']
+      )
+    elif args.dataset == 'fgnet':
+      face_classification_iterator = dataset.get_iterator_face_classificaton(
+        args.colormode, args.batch_size, args.data_dir, augmentation_generator, x_col='filename', y_cols=['age', 'filename', 'fileno']
+      )
     
     embeddings, files, ages, labels = \
-      experiment.collect_data(args.data_collection_pkl, face_classification_iterator)
+      experiment.collect_data(args.data_collection_pkl, face_classification_iterator, model=args.model)
       
     param_grid = {
       "C": loguniform.rvs(0.1, 100, size=5),
@@ -141,7 +162,7 @@ if __name__ == "__main__":
       "min_samples_leaf": [1, 5, 10, 20]
     }
     
-    algorithm = FaceNetWithClassifierPredictor(metadata=dataset.metadata)
+    algorithm = FaceNetWithClassifierPredictor(metadata=dataset.metadata, model_loader=model_loader)
     
     algorithm.make_train_test_split(embeddings, files, ages, labels)
     
