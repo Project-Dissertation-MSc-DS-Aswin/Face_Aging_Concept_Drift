@@ -9,7 +9,7 @@ import whylogs
 import mlflow
 from datasets import CACD2000Dataset, FGNETDataset, AgeDBDataset
 from experiment.drift_synthesis_by_eigen_faces import DriftSynthesisByEigenFacesExperiment
-from experiment.model_loader import KerasModelLoader
+from experiment.model_loader import FaceNetKerasModelLoader, FaceRecognitionBaselineKerasModelLoader
 from experiment.model_loader import get_augmented_datasets, preprocess_data_facenet_without_aging
 from tqdm import tqdm
 from copy import copy
@@ -54,6 +54,7 @@ args.noise_error = os.environ.get('noise_error', 0)
 args.mode = os.environ.get('mode', 'image_reconstruction')
 args.drift_beta = os.environ.get('drift_beta', 1)
 args.covariates_beta = os.environ.get('covariates_beta', 1)
+args.drift_type = os.environ.get('drift_type', 'incremental')
 
 parameters = list(
     map(lambda s: re.sub('$', '"', s),
@@ -77,6 +78,10 @@ args.bins = int(args.bins)
 args.noise_error = int(args.noise_error)
 args.drift_beta = float(args.drift_beta)
 args.covariates_beta = float(args.covariates_beta)
+if type(args.input_shape) == str:
+    input_shape = args.input_shape.replace('(','').replace(')','').split(",")
+    args.input_shape = tuple([int(s) for s in input_shape if s.strip() != '' or s.strip() != ','])
+    print(args.input_shape)
 
 def images_covariance(images_new, no_of_images):
     images_cov = np.cov(images_new.reshape(no_of_images, -1))
@@ -158,11 +163,14 @@ if __name__ == "__main__":
 
     mlflow.set_tracking_uri(args.tracking_uri)
 
-    model_loader = KerasModelLoader(whylogs, args.model, input_shape=(-1,160,160,3))
+    if args.model == 'FaceNetKeras':
+      model_loader = FaceNetKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
+    elif args.model == 'FaceRecognitionBaselineKeras':
+      model_loader = FaceRecognitionBaselineKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
     model_loader.load_model()
 
     dataset, augmentation_generator = load_dataset(args, whylogs, (96,96), args.no_of_pca_samples, 'grayscale')
-    experiment_dataset, augmentation_generator = load_dataset(args, whylogs, (160,160), args.no_of_samples, 'rgb')
+    experiment_dataset, augmentation_generator = load_dataset(args, whylogs, (args.input_shape[1], args.input_shape[2]), args.no_of_samples, 'rgb')
     
     pca_args = copy(args)
     pca_args.no_of_samples = pca_args.no_of_pca_samples
@@ -275,7 +283,7 @@ if __name__ == "__main__":
     np.save(open('predictions_classes_array.npy', 'wb'), np.array(predictions_classes_array))
     predictions_classes = pd.DataFrame(predictions_classes_array, 
                         columns=['hash_sample', 'offset', 'covariates_beta', 'drift_beta', 'true_identity', 'age', 'filename', 
-                        'y_pred', 'y_drift', 'predicted_age', 'euclidean', 'cosine', 'identity_grouping_distance', 
+                        'y_pred', 'proba_pred', 'y_drift', 'proba_drift', 'predicted_age', 'euclidean', 'cosine', 'identity_grouping_distance', 
                         'orig_TP', 'orig_FN', 'virtual_TP', 'virtual_FN', 'stat_TP', 'stat_FP', 'stat_undefined'])
     
     predictions_classes.to_csv(args.drift_synthesis_filename)

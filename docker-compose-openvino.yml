@@ -1,8 +1,8 @@
 version: '3'
 services:
-  OpenVINO:
-    build: ./Dockerfile.1
-    container_name: OpenVINO
+  openvino:
+    build: .
+    container_name: openvino
     tty: true
     ports:
       - "8082:8082"

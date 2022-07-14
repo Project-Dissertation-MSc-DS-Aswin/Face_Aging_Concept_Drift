@@ -27,3 +27,4 @@ CACD_FACE_CLASSIFIER: '../models/cacd_voting_classifier.pkl'
 AGEDB_DRIFT_EVALUATE_METRICS: "../data_collection/agedb_drift_evaluate_metrics.csv"
 AGEDB_DRIFT_SOURCE_FILENAME: "../data_collection/agedb_drift_source_table.csv"
 AGEDB_DRIFT_SYNTHESIS_METRICS: "../data_collection/agedb_drift_synthesis_metrics.csv"
+AGEDB_DRIFT_STATISTICAL_ANALYSIS: "../data_collection/morph_facenet_mse_p_array_df.csv"
