@@ -28,3 +28,7 @@ AGEDB_DRIFT_EVALUATE_METRICS: "../data_collection/agedb_drift_evaluate_metrics.c
 AGEDB_DRIFT_SOURCE_FILENAME: "../data_collection/agedb_drift_source_table.csv"
 AGEDB_DRIFT_SYNTHESIS_METRICS: "../data_collection/agedb_drift_synthesis_metrics.csv"
 AGEDB_DRIFT_STATISTICAL_ANALYSIS: "../data_collection/morph_facenet_mse_p_array_df.csv"
+AGEDB_FACE_CLASSIFIER_TEST_YOUNGER: '../models/facenet_agedb_voting_classifier_age_test_younger.pkl'
+AGEDB_FACE_CLASSIFIER_TRAIN_YOUNGER: '../models/facenet_agedb_voting_classifier_age_train_younger.pkl'
+AGEDB_DRIFT_EVALUATE_METRICS_TEST_YOUNGER: "../data_collection/facenet_agedb_drift_evaluate_metrics_test_younger.csv"
+AGEDB_DRIFT_EVALUATE_METRICS_TRAIN_YOUNGER: "../data_collection/facenet_agedb_drift_evaluate_metrics_train_younger.csv"

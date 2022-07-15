@@ -299,7 +299,7 @@ class FaceNetWithClassifierPredictor:
         
     return faces_chunk_array_train, face_classes_array_train
   
-  def make_data_age(self, labels_train, embeddings_train, data, age_low, age_high):
+  def make_data_age_test_younger(self, labels_train, embeddings_train, data, age_low, age_high):
     from copy import copy
     from collections import Counter
     
@@ -331,6 +331,47 @@ class FaceNetWithClassifierPredictor:
         face_classes_test_age = []
         
         for idx, row in df2.iterrows():
+            faces_chunk_train_age.append(embeddings_train[row['face_id']])
+            face_classes_train_age.append(name)
+        face_classes_array_train_age.append(face_classes_train_age)
+        faces_chunk_array_train_age.append(faces_chunk_train_age)
+        faces_chunk_train_age = []
+        face_classes_train_age = []
+    
+    return faces_chunk_array_train_age, face_classes_array_train_age
+
+  def make_data_age_train_younger(self, labels_train, embeddings_train, data, age_low, age_high):
+    from copy import copy
+    from collections import Counter
+    
+    copy_classes = copy(labels_train)
+    faces_chunk_train_age = []
+    faces_chunk_array_train_age = []
+    face_classes_train_age = []
+    face_classes_array_train_age = []
+    faces_chunk_test_age = []
+    faces_chunk_array_test_age = []
+    face_classes_test_age = []
+    face_classes_array_test_age = []
+    
+    for name, counter_class in tqdm(dict(Counter(copy_classes)).items()):
+        df1 = data[
+            (data['name'] == name) & (data['age'] <= age_low)
+        ]
+        df2 = data[
+            (data['name'] == name) & (data['age'] >= age_high)
+        ]
+        if len(df1) == 0 or len(df2) == 0:
+            continue
+        for idx, row in df2.iterrows():
+            faces_chunk_test_age.append(embeddings_train[row['face_id']])
+            face_classes_test_age.append(name)
+        face_classes_array_test_age.append(face_classes_test_age)
+        faces_chunk_array_test_age.append(faces_chunk_test_age)
+        faces_chunk_test_age = []
+        face_classes_test_age = []
+        
+        for idx, row in df1.iterrows():
             faces_chunk_train_age.append(embeddings_train[row['face_id']])
             face_classes_train_age.append(name)
         face_classes_array_train_age.append(face_classes_train_age)
