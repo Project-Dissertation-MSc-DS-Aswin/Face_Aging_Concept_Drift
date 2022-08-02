@@ -55,7 +55,7 @@ def get_reduced_metadata(args, dataset, seed=1000):
         result_idx = [False]*len(dataset.metadata)
         for i in idx:
             result_idx = np.logical_or(result_idx, i)
-        
+
         return dataset.metadata.loc[result_idx].reset_index()
     elif args.mode == 'image_perturbation':
         filenames = pd.read_csv(args.drift_source_filename)
@@ -63,7 +63,7 @@ def get_reduced_metadata(args, dataset, seed=1000):
         result_idx = [False]*len(dataset.metadata)
         for i in idx:
             result_idx = np.logical_or(result_idx, i)
-        
+
         return dataset.metadata.loc[result_idx].reset_index()
   elif args.dataset == "cacd":
     np.random.seed(seed)
