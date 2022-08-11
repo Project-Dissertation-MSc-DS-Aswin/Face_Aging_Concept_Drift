@@ -187,7 +187,7 @@ if __name__ == "__main__":
         np.random.seed(1000)
         print("Adding error in b/w images of " + str(args.noise_error))
         images_bw += np.random.normal(0, args.noise_error, size=(images_bw.shape))
-    images_new = demean_images(images_bw, len(dataset))
+    images_new = demean_images(images_bw, len(images_bw))
     if not os.path.isfile(args.pca_covariates_pkl):
         images_cov = images_covariance(images_new, len(images_new))
         P, pca, X_pca = pca_covariates(images_cov, args.pca_type, args.covariates_beta)
