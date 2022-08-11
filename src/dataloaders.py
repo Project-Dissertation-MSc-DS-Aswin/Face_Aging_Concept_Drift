@@ -23,7 +23,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         self.on_epoch_end()
         self.valid = valid
         
-    def get_iterator(self, color_mode, batch_size, data_dir, augmentation_generator, x_col='filename', y_col='name'):
+    def get_iterator(self, color_mode, batch_size, data_dir, augmentation_generator, x_col='filename', y_col='name', class_mode='categorical'):
         train_iterator = augmentation_generator.flow_from_dataframe(self.metadata, 
                                                                 x_col=x_col, 
                                                                 y_col=y_col,
@@ -31,7 +31,7 @@ class DataGenerator(tf.keras.utils.Sequence):
                                                                 target_size=self.dim,
                                                                 color_mode=color_mode, 
                                                                 batch_size=batch_size, 
-                                                                class_mode='categorical', classes=None, shuffle=self.shuffle)
+                                                                class_mode=class_mode, classes=None, shuffle=self.shuffle)
         
         return train_iterator
     
@@ -49,7 +49,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         
     def __len__(self):
         'Denotes the number of batches per epoch'
-        return len(self.list_IDs)
+        return len(self.iterator)
 
     def __getitem__(self, index):
         'Generate one batch of data'
@@ -60,6 +60,7 @@ class DataGenerator(tf.keras.utils.Sequence):
       
     def on_epoch_end(self):
         'Updates indexes after each epoch'
-        self.indexes = np.arange(len(self.list_IDs))
-        if self.shuffle == True:
-            np.random.shuffle(self.indexes)
+        # self.indexes = np.arange(len(self.list_IDs))
+        # if self.shuffle == True:
+        #     np.random.shuffle(self.indexes)
+        pass

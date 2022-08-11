@@ -20,6 +20,7 @@ import logging
 import sys
 import re
 import tensorflow as tf
+from sklearn.preprocessing import StandardScaler
 import imageio
 
 """
@@ -47,6 +48,9 @@ args.collect_for = os.environ.get('collect_for', 'age_drifting')
 args.drift_evaluate_metrics_test_younger = os.environ.get('drift_evaluate_metrics_test_younger', constants.AGEDB_DRIFT_EVALUATE_METRICS_TEST_YOUNGER)
 args.drift_evaluate_metrics_train_younger = os.environ.get('drift_evaluate_metrics_train_younger', constants.AGEDB_DRIFT_EVALUATE_METRICS_TRAIN_YOUNGER)
 args.experiment_id = os.environ.get("experiment_id", 1)
+args.log_file_younger = os.environ.get("log_file_younger", "test_data_predictions_younger.csv")
+args.log_file_older = os.environ.get("log_file_older", "test_data_predictions_older.csv")
+args.log_file = os.environ.get("log_file", "test_data_predictions.csv")
 args.drift_model_or_data = os.environ.get('drift_model_or_data', 'model_drift')
 args.input_shape = os.environ.get('input_shape', (-1,160,160,3))
 
@@ -170,6 +174,9 @@ if __name__ == "__main__":
     algorithm.make_train_test_split(embeddings, files, ages, labels)
     
     if args.collect_for == "classification":
+      scaler = StandardScaler()
+      algorithm.embeddings_train = scaler.fit_transform(algorithm.embeddings_train)
+      algorithm.embeddings_test = scaler.transform(algorithm.embeddings_test)
       dataframe = algorithm.make_dataframe(algorithm.embeddings_train, algorithm.labels_train, algorithm.ages_train, algorithm.files_train)
       faces_chunk_array_train, face_classes_array_train, faces_chunk_array_test, face_classes_array_test = \
         algorithm.make_data(algorithm.labels_train, algorithm.embeddings_train, dataframe)
@@ -181,7 +188,7 @@ if __name__ == "__main__":
                                                     hist_embedding_array, 
                                                     knn_embeding_array) = algorithm.train_and_evaluate(
           faces_chunk_array_train, face_classes_array_train, faces_chunk_array_test, face_classes_array_test, 
-          param_grid, param_grid2, param_grid3, no_of_classes=3
+          param_grid, param_grid2, param_grid3, no_of_classes=3, original_df=pd.DataFrame(columns=['test_labels', 'test_predictions']), log_file=args.log_file
         )
       
       dataframe = algorithm.make_dataframe(algorithm.embeddings_test, algorithm.labels_test, algorithm.ages_test, algorithm.files_test)
@@ -200,23 +207,37 @@ if __name__ == "__main__":
       lr = [hist_model.learning_rate for hist_model in h_emb_array]
       criterion = [rf_model.criterion for rf_model in rf_emb_array]
       
-      with mlflow.start_run(experiment_id=args.experiment_id, run_name='FaceNet with Classifier'):
-        mlflow.log_metric("score_embedding_average_test", np.mean(score_embedding_test))
-        mlflow.log_metric("score_embedding_weighted_average_test", np.sum(score_embedding_test * np.array(face_classes_count_test)) / np.sum(face_classes_count_test))
-        mlflow.log_metric("standard_error_test", pd.DataFrame((np.array(score_embedding_test * np.array(face_classes_count_test)) / np.sum(face_classes_count_test))).sem() * np.sqrt(len(score_embedding_test)))
-        mlflow.log_metric("score_embedding_average_train", np.mean(score_embedding_train))
-        mlflow.log_metric("score_embedding_weighted_average_train", np.sum(score_embedding_train * np.array(face_classes_count_train)) / np.sum(face_classes_count_train))
-        mlflow.log_metric("standard_error_train", pd.DataFrame((np.array(score_embedding_train * np.array(face_classes_count_train)) / np.sum(face_classes_count_train))).sem() * np.sqrt(len(score_embedding_train)))
-        try:
-          mlflow.set_tags({"SVM_C_Values": np.round(c_array, 2)})
-          mlflow.set_tags({"Hist_Depth": depth})
-          mlflow.set_tags({"Hist_Max_Iter": max_iter})
-          mlflow.set_tags({"Hist_Learning_Rate": lr})
-          mlflow.set_tags({"Hist_Leaf": leaf})
-          mlflow.set_tags({"RF_Criterion": criterion})
-          mlflow.set_tags({"RF_Split": split})
-        except Exception as e:
-          print(e.args)
+      # with mlflow.start_run(experiment_id=args.experiment_id, run_name='FaceNet with Classifier'):
+      #   mlflow.log_metric("score_embedding_average_test", np.mean(score_embedding_test))
+      #   mlflow.log_metric("score_embedding_weighted_average_test", np.sum(score_embedding_test * np.array(face_classes_count_test)) / np.sum(face_classes_count_test))
+      #   mlflow.log_metric("standard_error_test", pd.DataFrame((np.array(score_embedding_test * np.array(face_classes_count_test)) / np.sum(face_classes_count_test))).sem() * np.sqrt(len(score_embedding_test)))
+      #   mlflow.log_metric("score_embedding_average_train", np.mean(score_embedding_train))
+      #   mlflow.log_metric("score_embedding_weighted_average_train", np.sum(score_embedding_train * np.array(face_classes_count_train)) / np.sum(face_classes_count_train))
+      #   mlflow.log_metric("standard_error_train", pd.DataFrame((np.array(score_embedding_train * np.array(face_classes_count_train)) / np.sum(face_classes_count_train))).sem() * np.sqrt(len(score_embedding_train)))
+      #   try:
+      #     mlflow.set_tags({"SVM_C_Values": np.round(c_array, 2)})
+      #     mlflow.set_tags({"Hist_Depth": depth})
+      #     mlflow.set_tags({"Hist_Max_Iter": max_iter})
+      #     mlflow.set_tags({"Hist_Learning_Rate": lr})
+      #     mlflow.set_tags({"Hist_Leaf": leaf})
+      #     mlflow.set_tags({"RF_Criterion": criterion})
+      #     mlflow.set_tags({"RF_Split": split})
+      #   except Exception as e:
+      #     print(e.args)
+          
+      print("score_embedding_average_test", np.mean(score_embedding_test))
+      print("score_embedding_weighted_average_test", np.sum(score_embedding_test * np.array(face_classes_count_test)) / np.sum(face_classes_count_test))
+      print("standard_error_test", pd.DataFrame((np.array(score_embedding_test * np.array(face_classes_count_test)) / np.sum(face_classes_count_test))).sem() * np.sqrt(len(score_embedding_test)))
+      print("score_embedding_average_train", np.mean(score_embedding_train))
+      print("score_embedding_weighted_average_train", np.sum(score_embedding_train * np.array(face_classes_count_train)) / np.sum(face_classes_count_train))
+      print("standard_error_train", pd.DataFrame((np.array(score_embedding_train * np.array(face_classes_count_train)) / np.sum(face_classes_count_train))).sem() * np.sqrt(len(score_embedding_train)))
+      print({"SVM_C_Values": np.round(c_array, 2)})
+      print({"Hist_Depth": depth})
+      print({"Hist_Max_Iter": max_iter})
+      print({"Hist_Learning_Rate": lr})
+      print({"Hist_Leaf": leaf})
+      print({"RF_Criterion": criterion})
+      print({"RF_Split": split})
         
       faces_chunk_array_test, face_classes_array_test = np.concatenate([faces_chunk_array_train, faces_chunk_array_test]), np.array([face_classes_array_train, face_classes_array_test])
       
@@ -234,9 +255,12 @@ if __name__ == "__main__":
         mlflow.log_metrics(recall)
       
     elif args.collect_for == "age_drifting":
+      scaler = StandardScaler()
+      algorithm.embeddings_train = scaler.fit_transform(algorithm.embeddings_train)
+      algorithm.embeddings_test = scaler.transform(algorithm.embeddings_test)
       dataframe = algorithm.make_dataframe(algorithm.embeddings_train, algorithm.labels_train, algorithm.ages_train, algorithm.files_train)
       faces_chunk_array_train_younger, face_classes_array_train_younger, faces_chunk_array_test_older, face_classes_array_test_older = \
-        algorithm.make_data_age_test_younger(algorithm.labels_train, algorithm.embeddings_train, dataframe, age_low=48, age_high=46)
+        algorithm.make_data_age_train_younger(algorithm.labels_train, algorithm.embeddings_train, dataframe, age_low=48, age_high=46)
         
       faces_chunk_array_train_older, face_classes_array_train_older, faces_chunk_array_test_younger, face_classes_array_test_younger = \
         algorithm.make_data_age_test_younger(algorithm.labels_train, algorithm.embeddings_train, dataframe, age_low=48, age_high=46)
@@ -248,7 +272,7 @@ if __name__ == "__main__":
                                                     hist_embedding_array_younger, 
                                                     knn_embeding_array_younger) = algorithm.train_and_evaluate(
           faces_chunk_array_train_younger, face_classes_array_train_younger, faces_chunk_array_test_older, face_classes_array_test_older, 
-          param_grid, param_grid2, param_grid3, no_of_classes=3
+          param_grid, param_grid2, param_grid3, no_of_classes=3, original_df=pd.DataFrame(columns=['test_labels', 'test_predictions']), log_file=args.log_file_younger
         )
         
         score_embedding_test_older, score_embedding_train_older, face_classes_count_test_older, face_classes_count_train_older, (voting_classifier_array_older, 
@@ -257,7 +281,7 @@ if __name__ == "__main__":
                                                     hist_embedding_array_older, 
                                                     knn_embeding_array_older) = algorithm.train_and_evaluate(
           faces_chunk_array_train_older, face_classes_array_train_older, faces_chunk_array_test_younger, face_classes_array_test_younger, 
-          param_grid, param_grid2, param_grid3, no_of_classes=3
+          param_grid, param_grid2, param_grid3, no_of_classes=3, original_df=pd.DataFrame(columns=['test_labels', 'test_predictions']), log_file=args.log_file_older
         )
       
       with mlflow.start_run(experiment_id=args.experiment_id, run_name='FaceNet with Classifier'):
@@ -335,7 +359,7 @@ if __name__ == "__main__":
         faces_chunk_array_train, face_classes_array_train, faces_chunk_array_test, face_classes_array_test = \
           algorithm.make_data_age_test_younger(algorithm.labels_test, algorithm.embeddings_test, dataframe, age_low=48, age_high=46)
         
-        faces_chunk_array_test, face_classes_array_test = np.concatenate([faces_chunk_array_train, faces_chunk_array_test], axis=0), np.array([face_classes_array_train, face_classes_array_test], axis=0)
+        faces_chunk_array_test, face_classes_array_test = np.concatenate([faces_chunk_array_train, faces_chunk_array_test], axis=0), np.concatenate([face_classes_array_train, face_classes_array_test], axis=0)
         
         accuracy, recall = algorithm.test_and_evaluate(voting_classifier_array_younger, faces_chunk_array_test, face_classes_array_test, dataframe, 
                                                       algorithm.embeddings_test, collect_for=args.collect_for)
@@ -350,7 +374,7 @@ if __name__ == "__main__":
         faces_chunk_array_train, face_classes_array_train, faces_chunk_array_test, face_classes_array_test = \
           algorithm.make_data_age_train_younger(algorithm.labels_test, algorithm.embeddings_test, dataframe, age_low=48, age_high=46)
         
-        faces_chunk_array_test, face_classes_array_test = np.concatenate([faces_chunk_array_train, faces_chunk_array_test], axis=0), np.array([face_classes_array_train, face_classes_array_test], axis=0)
+        faces_chunk_array_test, face_classes_array_test = np.concatenate([faces_chunk_array_train, faces_chunk_array_test], axis=0), np.concatenate([face_classes_array_train, face_classes_array_test], axis=0)
         
         accuracy, recall = algorithm.test_and_evaluate(voting_classifier_array_older, faces_chunk_array_test, face_classes_array_test, dataframe, 
                                                       algorithm.embeddings_test, collect_for=args.collect_for)

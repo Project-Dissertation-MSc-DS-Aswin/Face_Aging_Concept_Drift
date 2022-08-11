@@ -25,9 +25,7 @@ class CACD2000Dataset(DataGenerator):
     self.color_mode = color_mode
     self.batch_size = batch_size
     self.data_dir = data_dir
-
-    if self.augmentation_generator:
-      self.augmentation_generator = augmentation_generator
+    self.augmentation_generator = augmentation_generator
 
   """
   Loads the metadata of the dataset
@@ -41,7 +39,7 @@ class CACD2000Dataset(DataGenerator):
                                 np.array(list(map(lambda x: x.tolist()[0][0], name)))]).T, 
                       columns=['age', 'identity', 'year', 'name', 'filename'])
     metadata_CACD['age'] = metadata_CACD['age'].astype(int)
-    metadata_CACD['identity'] = metadata_CACD['identity'].astype(int)
+    metadata_CACD['identity'] = metadata_CACD['identity'].astype(np.str)
     metadata_CACD['year'] = metadata_CACD['year'].astype(int)
     return metadata_CACD
   
@@ -105,9 +103,9 @@ class AgeDBDataset(DataGenerator):
       metadata_agedb = metadata_agedb.apply(filter_func, axis=1)
     return metadata_agedb
   
-  def set_metadata(self, metadata):
+  def set_metadata(self, metadata, class_mode='categorical'):
     self.metadata = metadata
-    self.iterator = self.get_iterator(self.color_mode, self.batch_size, self.data_dir, self.augmentation_generator, x_col='filename', y_col='name')
+    self.iterator = self.get_iterator(self.color_mode, self.batch_size, self.data_dir, self.augmentation_generator, x_col='filename', y_col='name', class_mode=class_mode)
   
   """
   Identities
