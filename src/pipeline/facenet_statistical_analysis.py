@@ -189,11 +189,11 @@ def p_value_real_calculate_age_by_age(mean_list, std_list, sem_list, count_list,
             cdf_array = []
             for ii, _t_value in enumerate(t_value):
                 if _t_value < 0:
-                    cdf1 = scipy.stats.t.cdf(_t_value, df=(count1[ii]+count2[ii]-2))*2
+                    cdf1 = scipy.stats.t.cdf(_t_value, df=(count1[ii]+count2[ii]-2))
                     if np.isnan(cdf1):
                         cdf1 = scipy.stats.t.cdf(_t_value, df=1)*2
                 else:
-                    cdf1 = scipy.stats.t.cdf(-_t_value, df=(count1[ii] + count2[ii] - 2))*2
+                    cdf1 = scipy.stats.t.cdf(-_t_value, df=(count1[ii] + count2[ii] - 2))
                     if np.isnan(cdf1):
                         cdf1 = scipy.stats.t.cdf(-_t_value, df=1)*2
                 cdf_array.append(cdf1)
@@ -344,13 +344,15 @@ if __name__ == "__main__":
     
     voting_classifier_array = pickle.load(open(args.classifier, 'rb'))
     
-    for beta in tqdm(iter_list):
+    for psnr in np.arange(0.01, args.psnr_error, 0.1):
+    
+    # for beta in tqdm(iter_list):
     
         data = experiment.collect_drift_statistics(images, images_bw, images_new, weights_vector, offset, 
                                     b_vector, offset, P_pandas, index, voting_classifier_array, 
-                                    model_loader, args.psnr_error, args.drift_type, drift_beta=beta)
+                                    model_loader, psnr, args.drift_type, drift_beta=0.5)
         
-        all_inference_images = pickle.load(open(args.inference_images_pkl, "rb"))
+        # all_inference_images = pickle.load(open(args.inference_images_pkl, "rb"))
         
         # all_inference_images = np.vstack(all_inference_images)
         
