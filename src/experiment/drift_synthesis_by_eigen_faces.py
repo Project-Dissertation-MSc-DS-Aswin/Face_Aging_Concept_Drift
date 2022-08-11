@@ -463,11 +463,11 @@ class DriftSynthesisByEigenFacesExperiment:
                 if self.args.model == 'FaceNetKeras':
                     res1 = l2_normalize(prewhiten(output_image)).reshape(*model_loader.input_shape)
                 elif self.args.model == 'FaceRecognitionBaselineKeras':
-                    res1 = output_image.reshape(*model_loader.input_shape)
+                    res1 = output_image.reshape(*model_loader.input_shape) / 255.
                 if self.args.model == 'FaceNetKeras':
                     res2 = l2_normalize(prewhiten(orig_image)).reshape(*model_loader.input_shape)
                 elif self.args.model == 'FaceRecognitionBaselineKeras':
-                    res2 = orig_image.reshape(*model_loader.input_shape)
+                    res2 = orig_image.reshape(*model_loader.input_shape) / 255.
                 
                 res1_images.append(res1)
                 res2_images.append(res2)
@@ -513,12 +513,12 @@ class DriftSynthesisByEigenFacesExperiment:
                 # 2-tailed test because mean diff may be positive or negative
                 for ii, _t_value in enumerate(t_value):
                     _t_value = [t if t < 0 else -t for t in _t_value]
-                    cdf1 = scipy.stats.t.cdf(_t_value, df=(t_value.shape[0]+t_value.shape[0]-2))*2
+                    cdf1 = scipy.stats.t.cdf(_t_value, df=(t_value.shape[0]+t_value.shape[0]-2))
                     p_value[ii] = cdf1
 
                 for ii, _t_value in enumerate(t_value_orig):
                     _t_value = [t if t < 0 else -t for t in _t_value]
-                    cdf1 = scipy.stats.t.cdf(_t_value, df=(t_value_orig.shape[0]+t_value_orig.shape[0]-2))*2
+                    cdf1 = scipy.stats.t.cdf(_t_value, df=(t_value_orig.shape[0]+t_value_orig.shape[0]-2))
                     p_value_orig[ii] = cdf1
                 
                 mse_p = mean_squared_error(p_value, p_value_orig)
@@ -687,144 +687,6 @@ class DriftSynthesisByEigenFacesExperiment:
         data = (inference_images, inference_images_orig, cols, ages_list, psnr_pca, mse_t_list, mse_p_list, mse_corr_list)
         
         return data
-    
-    def collect_drift_table_data(self, images, images_bw, images_demean, 
-                                        weights_vector, offset, b_vector, offset_vector, P_pandas, index, 
-                                        voting_classifier_array, model_loader, drift_type='incremental', psnr_error=0.05, drift_beta=np.arange(0.1, 1.0, 11), covariates_beta=0):
-        
-        def data_predictions(i, psnr_error, res1_images, res2_images, psnr_pca, mse_t_list, mse_p_list, mse_corr_list):
-            images_copy = images
-            images_demean_copy = images_demean
-            f_now = self.dataset.metadata['identity_grouping_distance'] * (
-                self.aging_function(weights_vector, b_vector, offset_vector) if self.args.mode == 'image_reconstruction' else self.aging_function_perturbation(weights_vector, b_vector, 0)
-            )
-            f_p_now = f_now[self.dataset.metadata['hash_sample'] == i] / \
-                    np.sum(self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'identity_grouping_distance'])
-            f_new = self.dataset.metadata['identity_grouping_distance'] * (
-                self.aging_function(weights_vector, b_vector, offset)  if self.args.mode == 'image_reconstruction' else self.aging_function_perturbation(weights_vector, b_vector, 0)
-            )
-            f_p_new = f_new[self.dataset.metadata['hash_sample'] == i] / \
-                    np.sum(self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'identity_grouping_distance'])
-
-            b_new = b_vector[self.dataset.metadata['hash_sample'] == i] + f_p_new.values.reshape(-1, 1) - f_p_now.values.reshape(-1, 1)
-
-            P_pandas_1 = P_pandas.loc[index.index.values[self.dataset.metadata['hash_sample'] == i],
-                                    index.index.values[self.dataset.metadata['hash_sample'] == i]]
-
-            images_syn = images_demean_copy.copy().reshape(len(self.dataset), -1)
-            images_syn[self.dataset.metadata['hash_sample'] == i] = P_pandas_1.values.dot(b_new)
-
-            new_images = \
-                (images_syn[self.dataset.metadata['hash_sample'] == i]) + \
-                images_demean_copy.reshape(len(self.dataset), -1)[self.dataset.metadata['hash_sample'] == i]
-                
-            filenames = self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'filename'].values
-            ages = self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'age'].values
-            
-            choices = list(range(len(new_images)))
-            choices = np.unique(choices)
-            for ii, choice in enumerate(choices):
-                image = new_images[choice].reshape(self.dataset.dim[0], self.dataset.dim[1])
-                # image_error is added for conducting negative test
-                orig_image = images_copy[self.dataset.metadata['hash_sample'] == i].reshape(-1, self.experiment_dataset.dim[0], 
-                        self.experiment_dataset.dim[1], 3)[choice]
-                orig_image_bw = images_bw[self.dataset.metadata['hash_sample'] == i].reshape(-1, self.dataset.dim[0], 
-                        self.dataset.dim[1])[choice]
-                output_image_bw = self.drift_type_function(drift_type, orig_image_bw, image, beta=drift_beta, function_type=self.args.function_type)
-                image = np.concatenate([np.expand_dims(image, 2)]*3, 2)
-                image = model_loader.resize(image)
-                output_image = self.drift_type_function(drift_type, orig_image, image, beta=drift_beta, function_type=self.args.function_type)
-                if self.args.model == 'FaceNetKeras':
-                    res1 = model_loader.infer(l2_normalize(prewhiten(output_image)).reshape(*model_loader.input_shape))
-                elif self.args.model == 'FaceRecognitionBaselineKeras':
-                    y = np.zeros((1, 435))
-                    name_first = 'name' if (self.args.dataset == 'agedb') or (self.args.dataset == 'fgnet') else 'identity'
-                    y[:, np.where(names==self.dataset.metadata[name_first])[0]] = 1
-                    res1 = model_loader.infer([np.expand_dims(output_image, 0)/255., y]).reshape(-1,717)
-                    
-                if self.args.model == 'FaceNetKeras':
-                    res2 = model_loader.infer(l2_normalize(prewhiten(orig_image)).reshape(*model_loader.input_shape))
-                elif self.args.model == 'FaceRecognitionBaselineKeras':
-                    y = np.zeros((1, 435))
-                    name_first = 'name' if (self.args.dataset == 'agedb') or (self.args.dataset == 'fgnet') else 'identity'
-                    y[:, np.where(names==self.dataset.metadata[name_first])[0]] = 1
-                    res2 = model_loader.infer([np.expand_dims(orig_image, 0)/255., y]).reshape(-1,717)
-                
-                if len(voting_classifier_array) > 0:
-                    matches = np.zeros(len(voting_classifier_array))
-                    virtual_matches = np.zeros(len(voting_classifier_array))
-                    pred_original = {}
-                    pred_drifted = {}
-                    pred_proba_original = OrderedDict({})
-                    pred_proba_drifted = OrderedDict({})
-                    classes_orig = OrderedDict({})
-                    for ij, voting_classifier in enumerate(voting_classifier_array):
-                        # reconstructed image
-                        pred_virtual = voting_classifier.predict(
-                            res1
-                        )[0]
-                        
-                        # original image
-                        pred_orig = voting_classifier.predict(
-                            res2
-                        )[0]
-                        
-                        pred_original[ij] = pred_orig
-                        pred_drifted[ij] = pred_virtual
-                        
-                        pred_proba_original[ij] = voting_classifier.predict_proba(
-                            res2
-                        )[0]
-                        
-                        pred_proba_drifted[ij] = voting_classifier.predict_proba(
-                            res1
-                        )[0]
-                        
-                        classes_orig[ij] = voting_classifier.classes_
-                        
-                        matches[ij] += int(pred_orig == self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'name'].iloc[choice])
-                        virtual_matches[ij] += int(pred_virtual == self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'name'].iloc[choice])
-                    
-                    orig_true_positives = 1 if sum(matches) == 1 else 0
-                    orig_false_negatives = 0 if sum(matches) == 1 else 1
-                    
-                    virtual_true_positives = 1 if sum(virtual_matches) == 1 else 0
-                    virtual_false_negatives = 0 if sum(virtual_matches) == 1 else 1
-                    
-                    statistical_drift_true_positives = 0
-                    statistical_drift_true_negatives = 0
-                    statistical_drift_undefined = 0
-                    
-                    idx = np.where(matches == 1)
-                    idx = idx[0][0] if len(idx[0]) > 0 else None
-                    if (idx is not None) and (pred_original[idx] == pred_drifted[idx]):
-                        statistical_drift_true_positives = 1
-                        statistical_drift_true_negatives = 0
-                    elif idx is not None:
-                        statistical_drift_true_positives = 0
-                        statistical_drift_true_negatives = 1
-                    else:
-                        statistical_drift_undefined = 1
-                        
-                    pred_virtual = pred_drifted[idx] if idx is not None else -1
-                    pred_orig = pred_original[idx] if idx is not None else -1
-                    
-                    if pred_virtual == -1:
-                        values_virtual = [np.max(v) for v in list(pred_proba_drifted.values())]
-                        arg_values_virtual = [np.argmax(v) for v in list(pred_proba_drifted.values())]
-                        arg_values_virtual_max = np.argmax(values_virtual)
-                        classes_virtual = classes_orig[arg_values_virtual_max]
-                        pred_virtual = classes_virtual[np.argmax(classes_virtual)]
-                    if pred_orig == -1:    
-                        values_orig = [np.max(v) for v in list(pred_proba_original.values())]
-                        arg_values_orig = [np.argmax(v) for v in list(pred_proba_original.values())]
-                        arg_values_orig_max = np.argmax(values_orig)
-                        classes_actual = classes_orig[arg_values_virtual_max]
-                        pred_orig = classes_actual[np.argmax(classes_actual)]
-                    
-                else:
-                    pred_virtual = -1
-                    pred_orig = -1
     
     def plot_histogram_of_face_distances(self, predictions_classes):
         

@@ -26,7 +26,6 @@ def collect_data_face_recognition_keras(model_loader, train_iterator):
   ages = []
   labels = []
   # Get input and output tensors
-  print(len(train_iterator))
   classes_counter = 0
   for i in tqdm(range(len(train_iterator)-1)):
     X, (y_age, y_filename, y_label) = train_iterator[i]
@@ -93,22 +92,18 @@ class FaceNetWithClassifierPredictor:
     self.metadata = metadata
     self.model_loader = model_loader
     
-  def train_and_fit(self, faces_chunk_array_train, face_classes_array_train, 
+  def train_and_fit(self, faces_chunk_array_train, face_classes_array_train, faces_chunk_array_test, face_classes_array_test, 
                     base_estimators, svm_embedding_array, 
                     rf_embedding_array, hist_embedding_array, knn_embeding_array, 
                     score_embedding_test, score_embedding_train, voting_classifier_array, face_classes_count_test, 
-                    face_classes_count_train, iidx, no_of_classes):
+                    face_classes_count_train, iidx, no_of_classes, original_df, log_file=None):
   
-    face_classes = np.concatenate(face_classes_array_train[iidx*no_of_classes:iidx*no_of_classes+no_of_classes])
+    face_classes_train = np.concatenate(face_classes_array_train[iidx*no_of_classes:iidx*no_of_classes+no_of_classes])
+    face_classes_test = np.concatenate(face_classes_array_test[iidx*no_of_classes:iidx*no_of_classes+no_of_classes])
     np.random.seed(100)
-    idx = np.arange(len(face_classes))
-    np.random.shuffle(idx)
-    face_classes_train = face_classes[idx[:int(0.8*len(face_classes))]]
-    faces_data = np.vstack(faces_chunk_array_train[iidx*no_of_classes:iidx*no_of_classes+no_of_classes])
-    faces_data_train = faces_data[idx[:int(0.8*len(face_classes))]]
+    faces_data_train = np.vstack(faces_chunk_array_train[iidx*no_of_classes:iidx*no_of_classes+no_of_classes])
     
-    face_classes_test = face_classes[idx[int(0.8*len(face_classes)):]]
-    faces_data_test = faces_data[idx[int(0.8*len(face_classes)):]]
+    faces_data_test = np.vstack(faces_chunk_array_test[iidx*no_of_classes:iidx*no_of_classes+no_of_classes])
     
     voting_classifier = VotingClassifier(estimators=base_estimators, voting='soft')
     
@@ -119,7 +114,16 @@ class FaceNetWithClassifierPredictor:
     hist_embedding_array.append(voting_classifier.named_estimators_.hist)
     knn_embeding_array.append(voting_classifier.named_estimators_.knn)
     
-    score_embedding_test.append(accuracy_score(face_classes_test, voting_classifier.predict(faces_data_test)))
+    test_predictions = voting_classifier.predict(faces_data_test)
+    
+    df = pd.DataFrame(columns=['test_labels', 'test_predictions'])
+    df['test_labels'] = face_classes_test
+    df['test_predictions'] = test_predictions
+    
+    original_df = pd.concat([original_df, df], axis=0)
+    original_df.to_csv(os.path.join("../data_collection", log_file))
+    
+    score_embedding_test.append(accuracy_score(face_classes_test, test_predictions))
     score_embedding_train.append(accuracy_score(face_classes_train, voting_classifier.predict(faces_data_train)))
     voting_classifier_array.append(voting_classifier)
     face_classes_count_test += [len(face_classes_test)]
@@ -129,10 +133,10 @@ class FaceNetWithClassifierPredictor:
                                                  svm_embedding_array, 
                                                  rf_embedding_array, 
                                                  hist_embedding_array, 
-                                                 knn_embeding_array)
+                                                 knn_embeding_array), original_df
   
-  def train_and_evaluate(self, faces_chunk_array_train, face_classes_array_train, 
-                         param_grid, param_grid2, param_grid3, no_of_classes):
+  def train_and_evaluate(self, faces_chunk_array_train, face_classes_array_train, faces_chunk_array_test, face_classes_array_test, 
+                         param_grid, param_grid2, param_grid3, no_of_classes, original_df, log_file="test_data_predictions.csv"):
     score_embedding_test = []
     score_embedding_train = []
     svm_embedding_array = []
@@ -161,12 +165,12 @@ class FaceNetWithClassifierPredictor:
                                                   svm_embedding_array, 
                                                   rf_embedding_array, 
                                                   hist_embedding_array, 
-                                                  knn_embeding_array) = \
-          self.train_and_fit(faces_chunk_array_train, face_classes_array_train, 
+                                                  knn_embeding_array), original_df = \
+          self.train_and_fit(faces_chunk_array_train, face_classes_array_train, faces_chunk_array_test, face_classes_array_test, 
                       base_estimators, svm_embedding_array, 
                       rf_embedding_array, hist_embedding_array, knn_embeding_array, 
                       score_embedding_test, score_embedding_train, voting_classifier_array, face_classes_count_test, 
-                      face_classes_count_train, idx, no_of_classes)
+                      face_classes_count_train, idx, no_of_classes, original_df, log_file=log_file)
           
           run_id = _get_or_start_run().info.run_id
           MlflowClient().log_metric(run_id, "score_embedding_average_test_" + str(idx), np.mean(score_embedding_test))
@@ -179,6 +183,8 @@ class FaceNetWithClassifierPredictor:
         except Exception as e:
           print(e.args)
         
+    original_df.to_csv(os.path.join("../data_collection", log_file))
+    
     return score_embedding_test, score_embedding_train, face_classes_count_test, face_classes_count_train, (voting_classifier_array, 
                                                  svm_embedding_array, 
                                                  rf_embedding_array, 
@@ -285,11 +291,20 @@ class FaceNetWithClassifierPredictor:
     faces_chunk_array_train = []
     face_classes_train = []
     face_classes_array_train = []
+    faces_chunk_test = []
+    faces_chunk_array_test = []
+    face_classes_test = []
+    face_classes_array_test = []
     for name, counter_class in tqdm(dict(Counter(copy_classes)).items()):
         df = data[
             data['name'] == name
         ]
-        for idx, row in df.iterrows():
+        np.random.seed(1000)
+        df1 = df.sample(len(df)).iloc[:int(0.8*len(df))]
+        np.random.seed(1000)
+        df2 = df.sample(len(df)).iloc[int(0.8*len(df)):]
+        
+        for idx, row in df1.iterrows():
             faces_chunk_train.append(embeddings_train[row['face_id']])
             face_classes_train.append(name)
         face_classes_array_train.append(face_classes_train)
@@ -297,7 +312,15 @@ class FaceNetWithClassifierPredictor:
         faces_chunk_train = []
         face_classes_train = []
         
-    return faces_chunk_array_train, face_classes_array_train
+        for idx, row in df2.iterrows():
+            faces_chunk_test.append(embeddings_train[row['face_id']])
+            face_classes_test.append(name)
+        face_classes_array_test.append(face_classes_train)
+        faces_chunk_array_test.append(faces_chunk_train)
+        faces_chunk_test = []
+        face_classes_test = []
+        
+    return faces_chunk_array_train, face_classes_array_train, faces_chunk_array_test, face_classes_array_test
   
   def make_data_age_test_younger(self, labels_train, embeddings_train, data, age_low, age_high):
     from copy import copy
@@ -338,7 +361,7 @@ class FaceNetWithClassifierPredictor:
         faces_chunk_train_age = []
         face_classes_train_age = []
     
-    return faces_chunk_array_train_age, face_classes_array_train_age
+    return faces_chunk_array_train_age, face_classes_array_train_age, faces_chunk_array_test_age, face_classes_array_test_age
 
   def make_data_age_train_younger(self, labels_train, embeddings_train, data, age_low, age_high):
     from copy import copy
@@ -379,4 +402,4 @@ class FaceNetWithClassifierPredictor:
         faces_chunk_train_age = []
         face_classes_train_age = []
     
-    return faces_chunk_array_train_age, face_classes_array_train_age
+    return faces_chunk_array_train_age, face_classes_array_train_age, faces_chunk_array_test_age, face_classes_array_test_age
