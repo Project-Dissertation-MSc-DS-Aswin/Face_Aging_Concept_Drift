@@ -344,69 +344,69 @@ if __name__ == "__main__":
     
     voting_classifier_array = pickle.load(open(args.classifier, 'rb'))
     
-    for psnr in np.arange(0.01, args.psnr_error, 0.1):
+    # for psnr in np.arange(0.01, args.psnr_error, 0.1):
     
-    # for beta in tqdm(iter_list):
+    for beta in tqdm(iter_list):
     
         data = experiment.collect_drift_statistics(images, images_bw, images_new, weights_vector, offset, 
                                     b_vector, offset, P_pandas, index, voting_classifier_array, 
                                     model_loader, psnr, args.drift_type, drift_beta=0.5)
         
-        # all_inference_images = pickle.load(open(args.inference_images_pkl, "rb"))
+        all_inference_images = pickle.load(open(args.inference_images_pkl, "rb"))
         
-        # all_inference_images = np.vstack(all_inference_images)
+        all_inference_images = np.vstack(all_inference_images)
         
         (inference_images, inference_images_orig, filenames, ages_list, psnr_pca, mse_t_list, mse_p_list, mse_corr_list) = data
         
-        # euclidean_distances_virtual = euclidean_distances(all_inference_images, inference_images)
-        # euclidean_distances_orig = euclidean_distances(all_inference_images, inference_images_orig)
+        euclidean_distances_virtual = euclidean_distances(all_inference_images, inference_images)
+        euclidean_distances_orig = euclidean_distances(all_inference_images, inference_images_orig)
         
-        # data_table_virtual = pd.DataFrame(euclidean_distances_virtual, columns=ages_list)
-        # data_table_orig = pd.DataFrame(euclidean_distances_orig, columns=ages_list)
+        data_table_virtual = pd.DataFrame(euclidean_distances_virtual, columns=ages_list)
+        data_table_orig = pd.DataFrame(euclidean_distances_orig, columns=ages_list)
         
-        # mean = {}
-        # sem = {}
-        # count = {}
-        # std = {}
+        mean = {}
+        sem = {}
+        count = {}
+        std = {}
 
-        # # sparse matrix
-        # for age, age_data in data_table_virtual.iteritems():
-        #     mean[int(age)] = age_data.loc[metadata_ages == int(age)].mean()
-        #     std[int(age)] = age_data.loc[metadata_ages == int(age)].std()
-        #     count[int(age)] = age_data.loc[metadata_ages == int(age)].count()
-        #     sem[int(age)] = age_data.loc[metadata_ages == int(age)].sem()
+        # sparse matrix
+        for age, age_data in data_table_virtual.iteritems():
+            mean[int(age)] = age_data.loc[metadata_ages == int(age)].mean()
+            std[int(age)] = age_data.loc[metadata_ages == int(age)].std()
+            count[int(age)] = age_data.loc[metadata_ages == int(age)].count()
+            sem[int(age)] = age_data.loc[metadata_ages == int(age)].sem()
             
-        # nan_std = [int(age) for age, std_value in list(std.items()) if np.isnan(std_value)]
-        # for age in nan_std:
-        #     std[int(age)] = 0
-        #     sem[int(age)] = 0
+        nan_std = [int(age) for age, std_value in list(std.items()) if np.isnan(std_value)]
+        for age in nan_std:
+            std[int(age)] = 0
+            sem[int(age)] = 0
             
-        # mean_list_virtual += [mean]
-        # std_list_virtual += [std]
-        # count_list_virtual += [count]
-        # sem_list_virtual += [sem]
+        mean_list_virtual += [mean]
+        std_list_virtual += [std]
+        count_list_virtual += [count]
+        sem_list_virtual += [sem]
         
-        # mean = {}
-        # sem = {}
-        # count = {}
-        # std = {}
+        mean = {}
+        sem = {}
+        count = {}
+        std = {}
 
-        # # sparse matrix
-        # for age, age_data in data_table_orig.iteritems():
-        #     mean[int(age)] = age_data.loc[metadata_ages == int(age)].mean()
-        #     std[int(age)] = age_data.loc[metadata_ages == int(age)].std()
-        #     count[int(age)] = age_data.loc[metadata_ages == int(age)].count()
-        #     sem[int(age)] = age_data.loc[metadata_ages == int(age)].sem()
+        # sparse matrix
+        for age, age_data in data_table_orig.iteritems():
+            mean[int(age)] = age_data.loc[metadata_ages == int(age)].mean()
+            std[int(age)] = age_data.loc[metadata_ages == int(age)].std()
+            count[int(age)] = age_data.loc[metadata_ages == int(age)].count()
+            sem[int(age)] = age_data.loc[metadata_ages == int(age)].sem()
             
-        # nan_std = [int(age) for age, std_value in list(std.items()) if np.isnan(std_value)]
-        # for age in nan_std:
-        #     std[int(age)] = 0
-        #     sem[int(age)] = 0
+        nan_std = [int(age) for age, std_value in list(std.items()) if np.isnan(std_value)]
+        for age in nan_std:
+            std[int(age)] = 0
+            sem[int(age)] = 0
             
-        # mean_list_orig += [mean]
-        # std_list_orig += [std]
-        # count_list_orig += [count]
-        # sem_list_orig += [sem]
+        mean_list_orig += [mean]
+        std_list_orig += [std]
+        count_list_orig += [count]
+        sem_list_orig += [sem]
         
         mse_p_array.append(mse_p_list)
         mse_t_array.append(mse_t_list)
@@ -419,23 +419,23 @@ if __name__ == "__main__":
         # predictions_original_list.append(predictions_original)
         # predictions_virtual_list.append(predictions_virtual)
         
-    # p_value_pca_image_for_real_drift_age_by_age = p_value_real_calculate_age_by_age(mean_list_virtual, std_list_virtual, sem_list_virtual, 
-    #                                       count_list_virtual, ages_list)
-    # p_value_orig_image_for_real_drift_age_by_age = p_value_real_calculate_age_by_age(mean_list_orig, std_list_orig, sem_list_orig, 
-    #                                       count_list_orig, ages_list)
+    p_value_pca_image_for_real_drift_age_by_age = p_value_real_calculate_age_by_age(mean_list_virtual, std_list_virtual, sem_list_virtual, 
+                                          count_list_virtual, ages_list)
+    p_value_orig_image_for_real_drift_age_by_age = p_value_real_calculate_age_by_age(mean_list_orig, std_list_orig, sem_list_orig, 
+                                          count_list_orig, ages_list)
     
-    # power_pca_age_by_age, alpha_pca_age_by_age = \
-    #     power_calculate_age_by_age(p_value_pca_image_for_real_drift_age_by_age, ages_list, sig=0.05)
-    # power_orig_age_by_age, alpha_orig_age_by_age = \
-    #     power_calculate_age_by_age(p_value_orig_image_for_real_drift_age_by_age, ages_list, sig=0.05)
+    power_pca_age_by_age, alpha_pca_age_by_age = \
+        power_calculate_age_by_age(p_value_pca_image_for_real_drift_age_by_age, ages_list, sig=0.05)
+    power_orig_age_by_age, alpha_orig_age_by_age = \
+        power_calculate_age_by_age(p_value_orig_image_for_real_drift_age_by_age, ages_list, sig=0.05)
     
     mse_p_array_df = pd.DataFrame(mse_p_array, columns=filenames)
     mse_t_array_df = pd.DataFrame(mse_t_array, columns=filenames)
     mse_corr_array_df = pd.DataFrame(mse_corr_array, columns=filenames)
     psnr_pca_df = pd.DataFrame(psnr_pca_list, columns=filenames)
 
-    # power_pca_df = pd.DataFrame(power_pca_age_by_age, columns=ages_list, index=ages_list)
-    # power_orig_df = pd.DataFrame(power_orig_age_by_age, columns=ages_list, index=ages_list)
+    power_pca_df = pd.DataFrame(power_pca_age_by_age, columns=ages_list, index=ages_list)
+    power_orig_df = pd.DataFrame(power_orig_age_by_age, columns=ages_list, index=ages_list)
     
     # statistical_drift_true_positives_df = pd.DataFrame(statistical_drift_true_positives_list, columns=filenames)
     # statistical_drift_true_negatives_df = pd.DataFrame(statistical_drift_true_negatives_list, columns=filenames)
@@ -447,8 +447,8 @@ if __name__ == "__main__":
     mse_t_array_df.to_csv("../data_collection/morph_facenet_mse_t_array_df_optimized.csv")
     mse_corr_array_df.to_csv("../data_collection/morph_facenet_mse_corr_array_df_optimized.csv")
     psnr_pca_df.to_csv("../data_collection/morph_facenet_psnr_pca_df_optimized.csv")
-    # power_pca_df.to_csv("../data_collection/power_pca_df.csv")
-    # power_orig_df.to_csv("../data_collection/power_orig_df.csv")
+    power_pca_df.to_csv("../data_collection/power_pca_df.csv")
+    power_orig_df.to_csv("../data_collection/power_orig_df.csv")
     
     # statistical_drift_true_positives_df.to_csv("../data_collection/statistical_drift_true_positives_df.csv")
     # statistical_drift_true_negatives_df.to_csv("../data_collection/statistical_drift_true_negatives_df.csv")
