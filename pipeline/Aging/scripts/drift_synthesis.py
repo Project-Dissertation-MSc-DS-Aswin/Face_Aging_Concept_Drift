@@ -84,7 +84,7 @@ P_pandas = pd.DataFrame(pca.components_.T if args.pca_type == 'PCA' else pca.eig
                             columns=list(range(pca.components_.T.shape[1] if args.pca_type == 'PCA' else pca.eigenvectors_.shape[1])))
 index = experiment.dataset.metadata['age'].reset_index()
     
-predictions_classes_array = experiment.collect_drift_predictions(images, images_new, 
+predictions_classes_array, _ = experiment.collect_drift_predictions(images, images_new, 
                                         weights_vector, offset, b_vector, offset_range, P_pandas, index, 
                                         voting_classifier_array, model_loader, drift_beta=args.drift_beta, covariates_beta=args.covariates_beta)
 

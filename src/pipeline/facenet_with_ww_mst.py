@@ -152,46 +152,46 @@ if __name__ == "__main__":
     
     pickle.dump(images, open("images.pkl", "wb"))
     
-    # if args.model == 'FaceNetKeras':
-    #   embeddings = model_loader.infer(l2_normalize(prewhiten(images.reshape(-1,args.input_shape[1], args.input_shape[2],3))))
-    # elif args.model == 'FaceRecognitionBaselineKeras':
-    #   embeddings = model_loader.infer((images.reshape(-1,args.input_shape[1], args.input_shape[2],3))/255.)
+    if args.model == 'FaceNetKeras':
+      embeddings = model_loader.infer(l2_normalize(prewhiten(images.reshape(-1,args.input_shape[1], args.input_shape[2],3))))
+    elif args.model == 'FaceRecognitionBaselineKeras':
+      embeddings = model_loader.infer((images.reshape(-1,args.input_shape[1], args.input_shape[2],3))/255.)
       
-    # if args.dataset == 'agedb':
-    #   face_classification_iterator = experiment_dataset.get_iterator_face_classificaton(
-    #     args.colormode, args.batch_size, args.data_dir, augmentation_generator, x_col='filename', y_cols=['age', 'filename', 'name']
-    #   )
-    # elif args.dataset == 'cacd':
-    #   face_classification_iterator = experiment_dataset.get_iterator_face_classificaton(
-    #     args.colormode, args.batch_size, args.data_dir, augmentation_generator, x_col='filename', y_cols=['age', 'filename', 'identity']
-    #   )
-    # elif args.dataset == 'fgnet':
-    #   face_classification_iterator = experiment_dataset.get_iterator_face_classificaton(
-    #     args.colormode, args.batch_size, args.data_dir, augmentation_generator, x_col='filename', y_cols=['age', 'filename', 'fileno']
-    #   )
+    if args.dataset == 'agedb':
+      face_classification_iterator = experiment_dataset.get_iterator_face_classificaton(
+        args.colormode, args.batch_size, args.data_dir, augmentation_generator, x_col='filename', y_cols=['age', 'filename', 'name']
+      )
+    elif args.dataset == 'cacd':
+      face_classification_iterator = experiment_dataset.get_iterator_face_classificaton(
+        args.colormode, args.batch_size, args.data_dir, augmentation_generator, x_col='filename', y_cols=['age', 'filename', 'identity']
+      )
+    elif args.dataset == 'fgnet':
+      face_classification_iterator = experiment_dataset.get_iterator_face_classificaton(
+        args.colormode, args.batch_size, args.data_dir, augmentation_generator, x_col='filename', y_cols=['age', 'filename', 'fileno']
+      )
     
-    # if args.model == 'FaceNetKeras':
-    #   embeddings_all, files, ages, labels = collect_data_facenet_keras(model_loader, face_classification_iterator)
-    # elif args.model == 'FaceRecognitionBaselineKeras':
-    #   embeddings_all, files, ages, labels = collect_data_face_recognition_keras(model_loader, face_classification_iterator)
+    if args.model == 'FaceNetKeras':
+      embeddings_all, files, ages, labels = collect_data_facenet_keras(model_loader, face_classification_iterator)
+    elif args.model == 'FaceRecognitionBaselineKeras':
+      embeddings_all, files, ages, labels = collect_data_face_recognition_keras(model_loader, face_classification_iterator)
       
-    # euclidean_embeddings = euclidean_distances(np.vstack(embeddings_all), embeddings)
+    euclidean_embeddings = euclidean_distances(np.vstack(embeddings_all), embeddings)
     
-    # df = pd.DataFrame(euclidean_embeddings, index=experiment_dataset.metadata.filename.values, columns=dataset.metadata.filename.values)
+    df = pd.DataFrame(euclidean_embeddings, index=experiment_dataset.metadata.filename.values, columns=dataset.metadata.filename.values)
     
     # # building sparse matrix
-    # for idx, row in df.iterrows():
-    #   cols = [i for i in range(dataset.metadata.age.values.shape[0]) if dataset.metadata.age.values[i] != experiment_dataset.metadata.age.values[idx]]
-    #   df.loc[idx, cols] = 0
+    for idx, row in df.iterrows():
+      cols = [i for i in range(dataset.metadata.age.values.shape[0]) if dataset.metadata.age.values[i] != experiment_dataset.metadata.age.values[idx]]
+      df.loc[idx, cols] = 0
     
-    # df.to_csv("file_euclidean.csv")
+    df.to_csv("file_euclidean.csv")
     
     # df = pd.read_csv("file_euclidean.csv", index_col=0)
     
-    # from scipy.sparse import csr_matrix
-    # from scipy.sparse.csgraph import minimum_spanning_tree
+    from scipy.sparse import csr_matrix
+    from scipy.sparse.csgraph import minimum_spanning_tree
 
-    # result = minimum_spanning_tree(csr_matrix(df.values)).toarray()
+    result = minimum_spanning_tree(csr_matrix(df.values)).toarray()
     
     # # count number of trees
-    # pd.DataFrame(result, index=experiment_dataset.metadata.filename.values, columns=dataset.metadata.filename.values).to_csv("file2_euclidean.csv")
+    pd.DataFrame(result, index=experiment_dataset.metadata.filename.values, columns=dataset.metadata.filename.values).to_csv("file2_euclidean.csv")
