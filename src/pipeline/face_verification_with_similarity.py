@@ -52,6 +52,7 @@ args.data_collection_pkl = os.environ.get('data_collection_pkl', constants.AGEDB
 args.drift_source_filename = os.environ.get('drift_source_filename', "../data_collection/agedb_drift_synthesis_metrics.csv")
 args.metadata = os.environ.get('metadata', constants.AGEDB_METADATA)
 args.logger_name = os.environ.get('logger_name', 'facenet_without_aging')
+args.tracking_uri = os.environ.get('tracking_uri', 'http://localhost:5000')
 args.no_of_samples = int(os.environ.get('no_of_samples', 2248))
 args.colormode = os.environ.get('colormode', 'rgb')
 args.conf_threshold = os.environ.get("conf_threshold", 0.9)
@@ -194,7 +195,7 @@ def collect_data_face_recognition_keras(model_loader, train_iterator):
       classes_counter += 1
     images.append(X)
     res_images.append(model_loader.infer([X/255., y_valid]))
-    labels += y_label.tolist()
+    labels += y_label
 
   return images, res_images, labels
 
@@ -209,12 +210,14 @@ def collect_data_facenet_keras(model_loader, train_iterator):
     X, y_label = train_iterator[i]
     images.append(X)
     res_images.append(model_loader.infer(l2_normalize(prewhiten(X))))
-    labels += y_label.tolist()
+    labels += y_label
     
   return images, res_images, labels
 
 if __name__ == "__main__":
 
+  mlflow.set_tracking_uri(args.tracking_uri)
+  
   if args.model == 'FaceNetKeras':
     model_loader = FaceNetKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
   elif args.model == 'FaceRecognitionBaselineKeras':
@@ -238,17 +241,17 @@ if __name__ == "__main__":
   
   all_inference_images = pickle.load(open("../data_collection/agedb_inferences_facenet.pkl", "rb"))
   
-  if args.model == 'FaceNetKeras':
-    images, res_images, labels = collect_data_facenet_keras(model_loader, iterator)
-  elif args.model == 'FaceRecognitionBaselineKeras':
-    images, res_images, labels = collect_data_face_recognition_keras(model_loader, iterator)
+  # if args.model == 'FaceNetKeras':
+  #   images, res_images, labels = collect_data_facenet_keras(model_loader, iterator)
+  # elif args.model == 'FaceRecognitionBaselineKeras':
+  #   images, res_images, labels = collect_data_face_recognition_keras(model_loader, iterator)
   
   # images = pickle.load(open("images.pkl", "rb"))
   # res_images = pickle.load(open("res_images.pkl", "rb"))
   # labels = pickle.load(open("labels.pkl", "rb"))
   
   all_inference_images = np.vstack(all_inference_images)
-  res_images = np.vstack(res_images)
+  # res_images = np.vstack(res_images)
   
   idx = [full_metadata['filename'] == filename for filename in target_metadata['filename']]
   result_idx = [False]*len(dataset.metadata)
@@ -270,6 +273,8 @@ if __name__ == "__main__":
   euclidean_distances_pair = euclidean_distances(target_images, query_images)
   
   data_table_virtual = pd.DataFrame(euclidean_distances_pair, columns=query_metadata.filename, index=target_metadata.filename)
+
+  print(data_table_virtual.shape)
   
   mean_nmr = {}
   mean_mr = {}
@@ -286,8 +291,8 @@ if __name__ == "__main__":
     std[filename.split("_")[1]] = age_data.loc[(target_metadata['name'] == filename.split("_")[1]).values].std()
     count[filename.split("_")[1]] = age_data.loc[(target_metadata['name'] == filename.split("_")[1]).values].count()
     sem[filename.split("_")[1]] = age_data.loc[(target_metadata['name'] == filename.split("_")[1]).values].sem()
-    mean_nmr[filename.split("_")[1]] = np.exp((age_data.loc[(target_metadata['name'] == filename.split("_")[1]).values] - mean_nm) / std_nm).mean()
-    mean_mr[filename.split("_")[1]] = np.exp((age_data.loc[(target_metadata['name'] != filename.split("_")[1]).values] - mean_matching) / std_matching).mean()
+    mean_nmr[filename.split("_")[1]] = ((age_data.loc[(target_metadata['name'] == filename.split("_")[1]).values] - mean_nm) / std_nm).mean()
+    mean_mr[filename.split("_")[1]] = ((age_data.loc[(target_metadata['name'] != filename.split("_")[1]).values] - mean_matching) / std_matching).mean()
 
   nan_std = [name for name, std_value in list(std.items()) if np.isnan(std_value)]
   for name in nan_std:
@@ -309,6 +314,15 @@ if __name__ == "__main__":
     plt.title("Histogram plot of matching scores and non-matching scores", fontsize=16)
     plt.legend()
     mlflow.log_figure(fig, "histogram_plot.png")
+    
+    nmr = np.array(list(mean_nmr.values()))
+    mr = np.array(list(mean_mr.values()))
+    tp = len(mr[mr > 0])
+    tn = len(nmr[nmr < 0])
+    fn = len(mr[mr <= 0])
+    fp = len(nmr[nmr >= 0])
+    print((tp + tn) / (tp + tn + fp + fn))
+    mlflow.log_metric("accuracy", (tp + tn) / (tp + tn + fp + fn))
     
     import seaborn as sns
     fig, ax = plt.subplots(1,1,figsize=(12,8))
