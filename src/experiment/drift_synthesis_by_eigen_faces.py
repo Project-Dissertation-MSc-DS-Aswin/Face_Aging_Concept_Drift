@@ -69,16 +69,18 @@ class DriftSynthesisByEigenFacesExperiment:
 
         return np.diag(distance)
 
-    def set_hash_sample_by_distinct(self, identity_grouping_distance):
-        self.dataset.metadata['hash_sample'] = 0
+    def set_hash_sample_by_distinct(self, identity_grouping_distance, metadata=None):
+        if metadata is None:
+            metadata = self.dataset.metadata
+        metadata['hash_sample'] = 0
         for ii, distance in enumerate(identity_grouping_distance):
             start_cutoff = distance - 1e-128
             end_cutoff = distance + 1e-128
-            self.dataset.metadata.loc[(self.dataset.metadata['identity_grouping_distance'] <= end_cutoff) & \
-                                 (self.dataset.metadata[
+            metadata.loc[(metadata['identity_grouping_distance'] <= end_cutoff) & \
+                                 (metadata[
                                       'identity_grouping_distance'] >= start_cutoff), 'hash_sample'] = ii + 1
 
-        return self.dataset.metadata
+        return metadata
     
     def set_hash_sample_by_dist(self, identity_grouping_distance):
         self.dataset.metadata['hash_sample'] = 0
@@ -93,12 +95,12 @@ class DriftSynthesisByEigenFacesExperiment:
         return self.dataset.metadata
 
     # solve by lagrangian
-    def weights_vector(self, metadata, b_vector, init_offset=None):
+    def weights_vector(self, metadata, b_vector, init_offset=None, factor=10, learning_rate=0.001):
 
         b_vector = tf.constant(np.expand_dims(b_vector, 2), dtype=tf.float64)
         
         np.random.seed(1000)
-        previous_weights = tf.Variable(10 * np.random.normal(size=(len(metadata), 9216, 1)), dtype=tf.float64)
+        previous_weights = tf.Variable(factor * np.random.normal(size=(len(metadata), 9216, 1)), dtype=tf.float64)
         np.random.seed(1000)
         previous_offset = tf.Variable(np.random.normal(size=(len(metadata),1)), dtype=tf.float64)
 
@@ -110,7 +112,7 @@ class DriftSynthesisByEigenFacesExperiment:
         std_age = np.std(age)
         age = (age - np.mean(age)) / np.std(age)
 
-        opt = tf.keras.optimizers.SGD(learning_rate=0.001)
+        opt = tf.keras.optimizers.SGD(learning_rate=learning_rate)
 
         loss = lambda: tf.pow(tf.reduce_sum(tf.abs(age - previous_offset - (tf.transpose(tf.matmul(tf.transpose(previous_weights, (0,2,1)), b_vector), (1, 0, 2)) / tf.norm(previous_weights, ord=2)))), 1) + \
             tf.norm(previous_offset, ord=2)
@@ -222,11 +224,14 @@ class DriftSynthesisByEigenFacesExperiment:
 
     def collect_drift_predictions(self, images, images_demean, weights_vector, offset_vector, 
                                   b_vector, offset_range, P_pandas, index, 
-                                  voting_classifier_array, model_loader, drift_beta=1, covariates_beta=100):
-        
-        predictions_classes_array = []
+                                  voting_classifier_array, model_loader, drift_beta=1, covariates_beta=100, hash_samples=[]):
         
         def data_predictions(i, beta):
+            predictions_classes_array = []
+            reconstr_images = []
+            pca_images = []
+            orig_images = []
+            
             data = []
             
             f_now = self.dataset.metadata['identity_grouping_distance'] * (
@@ -243,6 +248,8 @@ class DriftSynthesisByEigenFacesExperiment:
 
                 b_new = b_vector[self.dataset.metadata['hash_sample'] == i] + f_p_new.values.reshape(-1, 1) - f_p_now.values.reshape(-1, 1)
 
+                print(self.dataset.metadata['hash_sample'], i)
+                
                 P_pandas_1 = P_pandas.loc[index.index.values[self.dataset.metadata['hash_sample'] == i],
                                         index.index.values[self.dataset.metadata['hash_sample'] == i]]
 
@@ -400,18 +407,29 @@ class DriftSynthesisByEigenFacesExperiment:
                         statistical_drift_undefined
                     ])
                     
-            return data
+                    reconstr_images.append(image) # grayscale
+                    orig_images.append(orig_image) # rgb
+            
+            return data, np.stack(reconstr_images), np.stack(orig_images)
         
-        print(np.unique(self.dataset.metadata['hash_sample']))
+        if len(hash_samples) == 0:
+            print(np.unique(self.dataset.metadata['hash_sample']))
+        else:
+            print(hash_samples)
         
         data_merge = []
+        reconstructed_images = OrderedDict({})
+        original_images = OrderedDict({})
         
-        for ii in tqdm(np.unique(self.dataset.metadata['hash_sample'])):
+        for ii in tqdm(np.unique(self.dataset.metadata['hash_sample']) if len(hash_samples) == 0 else hash_samples):
             params_beta = np.linspace(0.1, drift_beta, 11)
             for beta in params_beta:
-                data_merge += data_predictions(int(ii), beta)
+                data, reconstruct_images, origi_images = data_predictions(int(ii), beta)
+                data_merge += data
+                reconstructed_images[self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == ii, 'filename'].iloc[0] + "/" + str(beta)] = reconstruct_images
+                original_images[self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == ii, 'filename'].iloc[0] + "/" + str(beta)] = origi_images
 
-        return data_merge
+        return data_merge, reconstructed_images, original_images
     
     def collect_drift_statistics(self, images, images_bw, images_demean, weights_vector, offset_vector, 
                                   b_vector, offset, P_pandas, index, voting_classifier_array, 

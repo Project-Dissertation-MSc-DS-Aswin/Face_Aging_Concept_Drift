@@ -276,7 +276,7 @@ if __name__ == "__main__":
     
     voting_classifier_array = pickle.load(open(args.classifier, 'rb'))
     
-    predictions_classes_array = experiment.collect_drift_predictions(images, images_new, 
+    predictions_classes_array, _, _, _ = experiment.collect_drift_predictions(images, images_new, 
                                         weights_vector, offset, b_vector, offset_range, P_pandas, index, 
                                         voting_classifier_array, model_loader, drift_beta=args.drift_beta, covariates_beta=args.covariates_beta)
     
