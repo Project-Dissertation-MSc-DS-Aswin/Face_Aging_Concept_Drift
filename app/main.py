@@ -9,8 +9,9 @@ import uuid
 import cv2
 import uvicorn
 from fastapi import File
-from fastapi import FastAPI
+from fastapi import FastAPI, Header
 from fastapi import UploadFile
+from pydantic import BaseModel
 import numpy as np
 from PIL import Image
 import pandas as pd
@@ -24,10 +25,42 @@ from time import time
 import pickle
 from config import *
 from time import time
+from typing import Union, List
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
+import socketio
 
-# call FastAPI app
+sio = socketio.Client()
+
+@sio.event
+def connect():
+    print('connection established')
+
+@sio.event
+def message(data):
+    print('message received with ', data)
+
+@sio.event
+def disconnect():
+    print('disconnected from server')
+    
+sio.connect('http://localhost:8000/', wait_timeout = 10)
+
 app = FastAPI()
+
+origins = [
+    "http://localhost:3000", 
+    "http://localhost:8041",
+    "*"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 df = pd.read_csv("../src/data_collection/agedb_drift_beta_optimized.csv")
 
@@ -85,18 +118,22 @@ def get_image_url(num: int):
   drifted = dataframe.drifted.values.tolist()
   
   for image_path in image_paths.values:
-    paths.append(config.API_HOST + """images/temp/{image}-resized.jpg""".format(image=image_path))
+    image_path = image_path.replace(".jpg", "-resized.jpg")
+    paths.append("""images/temp/{image}""".format(image=image_path))
   
   return {"paths": paths, "drifted": drifted}
 
+class Item(BaseModel):
+  filenames: List[str] = []
+  
 @app.post("/backend/drift/{seed}/{num}/{pipeline}/")
-def get_drift_predictions(seed: int, num: int, pipeline: str, filenames: list):
+def get_drift_predictions(seed: int, num: int, pipeline: str, item: Item):
   
-  filenames = ['3579_MichaelYork_50_m.jpg', '10638_LuiseRainer_26_f.jpg']
+  filenames = item.filenames
   
-  args = context.Args()
+  args = context.Args({})
   args.metadata = "../src/dataset_meta/AgeDB_metadata.mat"
-  args.classifier = "../src/models/16.07.2022_two_classifiers_facenet/facenet_agedb_voting_classifier_age_train_younger_latest.pkl"
+  args.classifier = "../src/models/agedb_voting_classifier_age.pkl"
   args.batch_size = 128
   args.dataset = "agedb"
   args.data_dir = "../../datasets/AgeDB"
@@ -104,14 +141,21 @@ def get_drift_predictions(seed: int, num: int, pipeline: str, filenames: list):
   args.alt_input_shape = (-1,96,96,3)
   args.model = "FaceNetKeras"
   
-  ml_model_classification = pickle.load(open(args.classifier, 'rb'))
+  sio.emit('status', {'percentage': 0, 'display': '<em class="progressbar-display">&nbsp;</em>'})
   
   ml_model_classification = pickle.load(open(args.classifier, 'rb'))
+  
+  sio.emit('status', {'percentage': 1, 'display': '<em class="progressbar-display">&nbsp;</em>'})
   
   preprocessor = app_preprocessing.Preprocessor()
   
   X, y = preprocessor.prepare_data(filenames)
+  
+  sio.emit('status', {'percentage': 15, 'display': '<em class="progressbar-display">&nbsp;</em>'})
+  
   X, y = preprocessor.prepare_drift_features_classification(X, y, ml_model_classification, filenames)
+  
+  sio.emit('status', {'percentage': 35, 'display': '<em class="progressbar-display">&nbsp;</em>'})
   
   pipeline_folder = "Aging"
   
@@ -122,15 +166,27 @@ def get_drift_predictions(seed: int, num: int, pipeline: str, filenames: list):
   data_X = dataframe[['drift_beta', 'psnr', 'mse_p', 'age']]
   X_train, X_test, y_train, y_test = preprocessor.train_test_split(data_X, dataframe['drifted'])
   
+  sio.emit('status', {'percentage': 45, 'display': '<em class="progressbar-display">&nbsp;</em>'})
+  
   rf = drift.random_forest(X_train, y_train)
+  
+  sio.emit('status', {'percentage': 65, 'display': '<em class="progressbar-display">&nbsp;</em>'})
   
   score_validation = drift.score_random_forest(rf, X_test, y_test)
   
+  sio.emit('status', {'percentage': 75, 'display': '<em class="progressbar-display">&nbsp;</em>'})
+  
   score_test = drift.score_random_forest(rf, X.drop(columns=['filename', 'drifted']), y)
+  
+  sio.emit('status', {'percentage': 85, 'display': '<em class="progressbar-display">&nbsp;</em>'})
   
   predictions_df = drift.generate_predictions(rf, X.drop(columns=['filename', 'drifted']), filenames, X['drifted'])
   
+  sio.emit('status', {'percentage': 95, 'display': '<em class="progressbar-display">&nbsp;</em>'})
+  
   predictions_df.to_csv(os.path.join("../pipeline", pipeline_folder, "output", "predictions_df_" + str(time()) + ".csv"))
+  
+  sio.emit('status', {'percentage': 100, 'display': '<em class="progressbar-display">&nbsp;</em>'})
   
   return {"predictions": predictions_df.to_dict(), "score_validation": score_validation, "score_test": score_test}
   
