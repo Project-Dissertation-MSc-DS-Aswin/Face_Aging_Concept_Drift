@@ -80,6 +80,15 @@ if type(args.input_shape) == str:
     args.input_shape = tuple([int(s) for s in input_shape if s.strip() != '' or s.strip() != ','])
 
 def visualize(image, results, box_color=(0, 255, 0), text_color=(0, 0, 255), fps=None):
+    """
+    Visualize the output of the network
+    @param image:
+    @param results:
+    @param box_color:
+    @param text_color:
+    @param fps:
+    @return:
+    """
     output = image.copy()
     landmark_color = [
         (255,   0,   0), # right eye
@@ -106,7 +115,15 @@ def visualize(image, results, box_color=(0, 255, 0), text_color=(0, 0, 255), fps
     return output
   
 def load_dataset(args, whylogs, no_of_samples, colormode, input_shape=(-1,160,160,3)):
-  
+    """
+    Load the dataset
+    @param args:
+    @param whylogs:
+    @param no_of_samples:
+    @param colormode:
+    @param input_shape:
+    @return:
+    """
     dataset = None
     augmentation_generator = None
     if args.dataset == "agedb":
@@ -130,6 +147,13 @@ def load_dataset(args, whylogs, no_of_samples, colormode, input_shape=(-1,160,16
     return dataset, augmentation_generator
   
 def get_reduced_metadata(args, dataset, seed=1000):
+  """
+  Get reduced metadata, reduce the metadata by applying pandas filters
+  @param args:
+  @param dataset:
+  @param seed:
+  @return:
+  """
   if args.dataset == "fgnet":
     return dataset.metadata
   elif args.dataset == "agedb":
@@ -148,7 +172,16 @@ def get_reduced_metadata(args, dataset, seed=1000):
     return dataset.metadata.sample(args.no_of_samples).reset_index()
   
 def plot_gallery(images, titles, h, w, n_row=3, n_col=4):
-    """Helper function to plot a gallery of portraits"""
+    """
+    Helper function to plot a gallery of portraits
+    @param images:
+    @param titles:
+    @param h:
+    @param w:
+    @param n_row:
+    @param n_col:
+    @return:
+    """
     fig = plt.figure(figsize=(1.8 * n_col, 2.4 * n_row))
     plt.subplots_adjust(bottom=0, left=0.01, right=0.99, top=0.90, hspace=0.35)
     for i in range(n_row * n_col):
@@ -162,24 +195,31 @@ def plot_gallery(images, titles, h, w, n_row=3, n_col=4):
 
 if __name__ == "__main__":
   
+  # set the tracking URI
   mlflow.set_tracking_uri(args.tracking_uri)
   
+  # check if the model is YuNet_onnx
   if args.model == 'YuNet_onnx':
     model_loader = YuNetModelLoader(whylogs, args.model_path, input_shape=[1,96,96,3], conf_threshold=args.conf_threshold, nms_threshold=args.nms_threshold, backend=args.backend, target=args.target, top_k=args.top_k)
   
+  # load the dataset
   dataset, augmentation_generator = load_dataset(args, whylogs, args.no_of_samples, 'rgb', input_shape=args.input_shape)
 
+  # set the metadata
   dataset.set_metadata(
       get_reduced_metadata(args, dataset), class_mode='raw'
   )
   
+  # extract the experiment
   experiment = FaceClassificationByImages(dataset, whylogs, model_loader)
   
+  # collect data from the experiment
   images_bw, classes = experiment.collect_data(dataset.iterator, output_size=(args.input_shape[1], args.input_shape[2]))
   
   print("No. of classes: ", np.unique(classes))
   print("Classes: ", classes)
   
+  # preprocess the data and split the data
   X_train, X_test, y_train, y_test = experiment.preprocess_and_split(images_bw.reshape(len(images_bw), -1), classes)
   
   X_train_pca, X_test_pca = [], []
@@ -188,6 +228,7 @@ if __name__ == "__main__":
     X_train_pca.append(_X_train_pca)
     X_test_pca.append(_X_test_pca)
   
+  # train the classifiers
   clf = []
   for i in range(len(X_train_pca)):
     try:
@@ -195,6 +236,7 @@ if __name__ == "__main__":
     except Exception as e:
       continue
     
+  # score the classifiers
   y_pred = []
   for i in range(len(X_test_pca)):
     try:
@@ -202,6 +244,7 @@ if __name__ == "__main__":
     except Exception as e:
       continue
   
+  # start mlflow experiment
   with mlflow.start_run(experiment_id=args.experiment_id):
     
     def title(y_pred, y_test, i):
@@ -216,4 +259,5 @@ if __name__ == "__main__":
       ]
 
       fig = plot_gallery(X_test[i], prediction_titles, args.input_shape[1], args.input_shape[2])
+      # log the figure of mlflow for face classification by images
       mlflow.log_figure(fig, "images/fig_" + str(i) + ".jpg")

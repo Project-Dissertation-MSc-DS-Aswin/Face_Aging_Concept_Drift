@@ -96,6 +96,12 @@ if type(args.input_shape) == str:
     print(args.input_shape)
 
 def get_reduced_metadata(args, dataset):
+  """
+  Get the reduced metadata
+  @param args:
+  @param dataset:
+  @return: pd.DataFrame()
+  """
   if args.dataset == "fgnet":
     return dataset.metadata
   elif args.dataset == "agedb":
@@ -156,6 +162,13 @@ def get_reduced_metadata(args, dataset):
       return dataset.metadata.loc[result_idx].sort_values(by=['name', 'age'])
 
 def load_dataset(args, whylogs, input_shape=(-1,160,160,3)):
+  """
+  Load the dataset
+  @param args:
+  @param whylogs:
+  @param input_shape:
+  @return:
+  """
   dataset = None
   if args.dataset == "agedb":
     augmentation_generator = get_augmented_datasets()
@@ -176,6 +189,12 @@ def load_dataset(args, whylogs, input_shape=(-1,160,160,3)):
   return dataset, augmentation_generator
 
 def collect_data_face_recognition_keras(model_loader, train_iterator):
+  """
+  Collect the images by face recognition using baseline cvae model
+  @param model_loader:
+  @param train_iterator:
+  @return:
+  """
   res_images = []
   y_classes = []
   files = []
@@ -200,6 +219,12 @@ def collect_data_face_recognition_keras(model_loader, train_iterator):
   return images, res_images, labels
 
 def collect_data_facenet_keras(model_loader, train_iterator):
+  """
+  Collect the images using FaceNet keras
+  @param model_loader:
+  @param train_iterator:
+  @return:
+  """
   res_images = []
   files = []
   ages = []
@@ -216,40 +241,49 @@ def collect_data_facenet_keras(model_loader, train_iterator):
 
 if __name__ == "__main__":
 
+  # set tracking URI
   mlflow.set_tracking_uri(args.tracking_uri)
   
+  # choose the model
   if args.model == 'FaceNetKeras':
     model_loader = FaceNetKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
   elif args.model == 'FaceRecognitionBaselineKeras':
     model_loader = FaceRecognitionBaselineKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
   
+  # load the model
   model_loader.load_model()
   
   # load the dataset and set the metadata
   dataset, augmentation_generator = load_dataset(args, whylogs, input_shape=args.input_shape)
+  # copy the full metadata for target set and query set declaration
   full_metadata = copy(dataset.metadata)
   
   args.source_type = 'file'
+  # obtain the query metadata
   query_metadata = get_reduced_metadata(args, dataset)
   
   args.source_type = 'not_in_file'
+  # obtain the target metadata
   target_metadata = get_reduced_metadata(args, dataset)
   
   args.no_of_samples = len(dataset.metadata)
   
+  # get iterator for face classification
   iterator = dataset.get_iterator_face_classificaton(args.colormode, args.batch_size, args.data_dir, augmentation_generator, x_col='filename', y_cols=['name'])
   
+  # get all inference images from pickle file
   all_inference_images = pickle.load(open("../data_collection/agedb_inferences_facenet.pkl", "rb"))
   
-  # if args.model == 'FaceNetKeras':
-  #   images, res_images, labels = collect_data_facenet_keras(model_loader, iterator)
-  # elif args.model == 'FaceRecognitionBaselineKeras':
-  #   images, res_images, labels = collect_data_face_recognition_keras(model_loader, iterator)
+  if args.model == 'FaceNetKeras':
+    images, res_images, labels = collect_data_facenet_keras(model_loader, iterator)
+  elif args.model == 'FaceRecognitionBaselineKeras':
+    images, res_images, labels = collect_data_face_recognition_keras(model_loader, iterator)
   
   # images = pickle.load(open("images.pkl", "rb"))
   # res_images = pickle.load(open("res_images.pkl", "rb"))
   # labels = pickle.load(open("labels.pkl", "rb"))
   
+  # stack the inference images
   all_inference_images = np.vstack(all_inference_images)
   # res_images = np.vstack(res_images)
   
@@ -269,9 +303,10 @@ if __name__ == "__main__":
   target_images = all_inference_images[target_metadata.index] # target metadata
   query_images = all_inference_images[query_metadata.index] # query metadata
   
-  # target set and query set
+  # target set and query set, euclidean distances pairwise
   euclidean_distances_pair = euclidean_distances(target_images, query_images)
   
+  # pandas dataframe by euclidean distances
   data_table_virtual = pd.DataFrame(euclidean_distances_pair, columns=query_metadata.filename, index=target_metadata.filename)
 
   print(data_table_virtual.shape)
@@ -282,7 +317,7 @@ if __name__ == "__main__":
   count = {}
   std = {}
 
-  # sparse matrix
+  # sparse matrix using mean matching and mean non matching
   for filename, age_data in data_table_virtual.iteritems():
     mean_nm = age_data.loc[(target_metadata['name'] != filename.split("_")[1]).values].mean()
     std_nm = age_data.loc[(target_metadata['name'] != filename.split("_")[1]).values].std()
@@ -294,11 +329,13 @@ if __name__ == "__main__":
     mean_nmr[filename.split("_")[1]] = ((age_data.loc[(target_metadata['name'] == filename.split("_")[1]).values] - mean_nm) / std_nm).mean()
     mean_mr[filename.split("_")[1]] = ((age_data.loc[(target_metadata['name'] != filename.split("_")[1]).values] - mean_matching) / std_matching).mean()
 
+  # set the std to 0 and sem to 0
   nan_std = [name for name, std_value in list(std.items()) if np.isnan(std_value)]
   for name in nan_std:
       std[name] = 0
       sem[name] = 0
       
+  # start the mlflow experiment
   with mlflow.start_run(experiment_id=args.experiment_id):
     fig = plt.figure(figsize=(12,8))
     plt.scatter(list(mean_nmr.values()), list(mean_mr.values()))
@@ -315,6 +352,7 @@ if __name__ == "__main__":
     plt.legend()
     mlflow.log_figure(fig, "histogram_plot.png")
     
+    # non matching rates and matching rates
     nmr = np.array(list(mean_nmr.values()))
     mr = np.array(list(mean_mr.values()))
     tp = len(mr[mr > 0])

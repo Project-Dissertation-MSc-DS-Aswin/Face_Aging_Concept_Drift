@@ -262,10 +262,12 @@ if __name__ == "__main__":
       
     # print(df.loc[labels, ['labels', 'cluster_labels']])
     
-    # print(df.loc[labels, ['cluster_labels', 'labels', 'files']].groupby(by=['labels', 'cluster_labels'])['files'].count().to_csv("newfile.csv"))
+    print(df.loc[labels, ['cluster_labels', 'labels', 'files']].groupby(by=['labels', 'cluster_labels'])['files'].count().to_csv("newfile_2.csv"))
     
-    # df.loc[labels, 'files'].to_csv("files_clustered.csv")
-    # df.loc[np.logical_not(labels), 'files'].to_csv("files_for_classification.csv")
+    df.loc[labels, 'files'].to_csv("files_clustered_2.csv")
+    df.loc[np.logical_not(labels), 'files'].to_csv("files_for_classification_2.csv")
+    
+    exit()
     
     established_embeddings = algorithm.embeddings_train[labels]
     pickle.dump(established_embeddings, open("established_embeddings.pkl", "wb"))

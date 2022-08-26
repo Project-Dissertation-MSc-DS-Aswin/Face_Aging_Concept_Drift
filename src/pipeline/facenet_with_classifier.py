@@ -188,7 +188,7 @@ if __name__ == "__main__":
     elif args.collect_for == "age_drifting":
       dataframe = algorithm.make_dataframe(algorithm.embeddings_train, algorithm.labels_train, algorithm.ages_train, algorithm.files_train)
       faces_chunk_array_train, face_classes_array_train = \
-        algorithm.make_data_age_test_younger(algorithm.labels_train, algorithm.embeddings_train, dataframe, age_low=48, age_high=46)
+        algorithm.make_data_age_test_younger(algorithm.labels_train, algorithm.embeddings_train, dataframe, age_low=47, age_high=48)
       
       with mlflow.start_run(experiment_id=args.experiment_id, run_name='FaceNet with Classifier'):
         score_embedding_test, score_embedding_train, face_classes_count_test, face_classes_count_train, (voting_classifier_array, 
@@ -202,7 +202,7 @@ if __name__ == "__main__":
       
       dataframe = algorithm.make_dataframe(algorithm.embeddings_test, algorithm.labels_test, algorithm.ages_test, algorithm.files_test)
       faces_chunk_array_train, face_classes_array_train = \
-        algorithm.make_data_age_train_younger(algorithm.labels_test, algorithm.embeddings_test, dataframe, age_low=48, age_high=46)
+        algorithm.make_data_age_train_younger(algorithm.labels_test, algorithm.embeddings_test, dataframe, age_low=47, age_high=48)
     
     svm_emb_array = [svm_cv.best_estimator_ for svm_cv in svm_embedding_array]
     rf_emb_array = [rf_cv.best_estimator_ for rf_cv in rf_embedding_array]

@@ -1,8 +1,8 @@
 version: '3'
 services:
-  Face_Aging_Concept_Drift:
+  face_aging_concept_drift:
     build: .
-    container_name: Face_Aging_Concept_Drift
+    container_name: face_aging_concept_drift
     tty: true
     ports:
       - "8081:8081"

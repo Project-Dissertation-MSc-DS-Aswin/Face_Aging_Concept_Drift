@@ -30,22 +30,22 @@ args = Args({})
 
 args.dataset = os.environ.get('dataset', 'agedb')
 args.model = os.environ.get('model', 'facenet_keras.h5')
-args.data_dir = os.environ.get('data_dir', constants.AGEDB_DATADIR)
+args.data_dir = os.environ.get('data_dir', constants.CACD_DATADIR)
 args.grouping_distance_type = os.environ.get('grouping_distance_type', constants.EIGEN_FACES_DISTANCES_GROUPING)
 args.grouping_distance_cutoff_range = os.environ.get('grouping_distance_cutoff_range')
 args.batch_size = os.environ.get('batch_size', 128)
 args.preprocess_prewhiten = os.environ.get('preprocess_prewhiten', 1)
-args.data_collection_pkl = os.environ.get('data_collection_pkl', constants.AGEDB_FACENET_INFERENCES)
-args.pca_covariates_pkl = os.environ.get('pca_covariates_pkl', constants.AGEDB_PCA_COVARIATES)
-args.metadata = os.environ.get('metadata', constants.AGEDB_METADATA)
+args.data_collection_pkl = os.environ.get('data_collection_pkl', constants.CACD_FACENET_INFERENCES)
+args.pca_covariates_pkl = os.environ.get('pca_covariates_pkl', constants.CACD_PCA_COVARIATES)
+args.metadata = os.environ.get('metadata', constants.CACD_METADATA)
 args.logger_name = os.environ.get('logger_name', 'facenet_with_aging')
 args.no_of_samples = os.environ.get('no_of_samples', 2248)
 args.no_of_pca_samples = os.environ.get('no_of_pca_samples', 2248)
 args.colormode = os.environ.get('colormode', 'rgb')
 args.log_images = os.environ.get('log_images', 's3')
 args.tracking_uri = os.environ.get('tracking_uri', 'http://localhost:5000')
-args.classifier = os.environ.get('classifier', constants.AGEDB_FACE_CLASSIFIER)
-args.drift_synthesis_filename = os.environ.get('drift_synthesis_filename', constants.AGEDB_DRIFT_SYNTHESIS_EDA_CSV_FILENAME)
+args.classifier = os.environ.get('classifier', constants.CACD_FACE_CLASSIFIER)
+args.drift_synthesis_filename = os.environ.get('drift_synthesis_filename', constants.CACD_DRIFT_SYNTHESIS_EDA_CSV_FILENAME)
 args.experiment_id = os.environ.get('experiment_id', 0)
 args.drift_source_filename = os.environ.get('drift_source_filename', constants.AGEDB_DRIFT_SOURCE_FILENAME)
 args.pca_type = os.environ.get('pca_type', 'PCA')
@@ -157,7 +157,30 @@ def get_reduced_metadata(args, dataset, seed=1000):
         return dataset.metadata.loc[result_idx].reset_index()
   elif args.dataset == "cacd":
     np.random.seed(seed)
-    return dataset.metadata.sample(args.no_of_samples).reset_index()
+    if args.mode == 'image_reconstruction':
+        filenames = pd.read_csv(args.drift_source_filename)
+        idx = [dataset.metadata['filename'] == filename for filename in filenames['filename']]
+        result_idx = [False]*len(dataset.metadata)
+        for i in idx:
+            result_idx = np.logical_or(result_idx, i)
+        
+        return dataset.metadata.loc[result_idx].sample(args.no_of_samples).reset_index()
+    elif args.mode == 'image_perturbation':
+        filenames = pd.read_csv(args.drift_source_filename)
+        idx = [dataset.metadata['filename'] == filename for filename in filenames['filename']]
+        result_idx = [False]*len(dataset.metadata)
+        for i in idx:
+            result_idx = np.logical_or(result_idx, i)
+    else:
+        names = dataset.metadata.groupby('name').count()
+        names = names[names['age'] > 120]
+        names = names.index.get_level_values(0)
+        idx = [dataset.metadata['name'] == name for name in names]
+        result_idx = [False]*len(dataset.metadata)
+        for i in idx:
+            result_idx = np.logical_or(result_idx, i)
+    
+        return dataset.metadata.loc[result_idx].sample(args.no_of_samples).reset_index()
 
 if __name__ == "__main__":
 
@@ -276,7 +299,7 @@ if __name__ == "__main__":
     
     voting_classifier_array = pickle.load(open(args.classifier, 'rb'))
     
-    predictions_classes_array, _, _, _ = experiment.collect_drift_predictions(images, images_new, 
+    predictions_classes_array, _, _ = experiment.collect_drift_predictions(images, images_new, 
                                         weights_vector, offset, b_vector, offset_range, P_pandas, index, 
                                         voting_classifier_array, model_loader, drift_beta=args.drift_beta, covariates_beta=args.covariates_beta)
     

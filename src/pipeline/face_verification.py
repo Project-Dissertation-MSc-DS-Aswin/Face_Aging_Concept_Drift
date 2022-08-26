@@ -94,6 +94,12 @@ if type(args.input_shape) == str:
     print(args.input_shape)
 
 def get_reduced_metadata(args, dataset):
+  """
+  Get the reduced metadata
+  @param args:
+  @param dataset:
+  @return: pd.DataFrame()
+  """
   if args.dataset == "fgnet":
     return dataset.metadata
   elif args.dataset == "agedb":
@@ -146,6 +152,13 @@ def get_reduced_metadata(args, dataset):
       return dataset.metadata.loc[result_idx].sort_values(by=['name', 'age'])
 
 def load_dataset(args, whylogs, input_shape=(-1,160,160,3)):
+  """
+  Load the dataset
+  @param args:
+  @param whylogs:
+  @param input_shape:
+  @return:
+  """
   dataset = None
   if args.dataset == "agedb":
     augmentation_generator = get_augmented_datasets()
@@ -166,6 +179,12 @@ def load_dataset(args, whylogs, input_shape=(-1,160,160,3)):
   return dataset, augmentation_generator
 
 def collect_data_face_recognition_keras(model_loader, train_iterator):
+  """
+  Collect the data using face recognition keras by Baseline CVAE
+  @param model_loader:
+  @param train_iterator:
+  @return:
+  """
   res_images = []
   y_classes = []
   files = []
@@ -190,6 +209,12 @@ def collect_data_face_recognition_keras(model_loader, train_iterator):
   return images, res_images, labels
 
 def collect_data_facenet_keras(model_loader, train_iterator):
+  """
+  Collect the data using FaceNet keras
+  @param model_loader:
+  @param train_iterator:
+  @return:
+  """
   res_images = []
   files = []
   ages = []
@@ -206,36 +231,42 @@ def collect_data_facenet_keras(model_loader, train_iterator):
 
 if __name__ == "__main__":
 
+  # select the model
   if args.model == 'FaceNetKeras':
     model_loader = FaceNetKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
   elif args.model == 'FaceRecognitionBaselineKeras':
     model_loader = FaceRecognitionBaselineKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
   
+  # load the model
   model_loader.load_model()
   
   # load the dataset and set the metadata
   dataset, augmentation_generator = load_dataset(args, whylogs, input_shape=args.input_shape)
+  # set the metadata
   dataset.set_metadata(
     get_reduced_metadata(args, dataset)
   )
   
+  # set the number of samples
   args.no_of_samples = len(dataset.metadata)
   
+  # iterator obtain by face classification
   iterator = dataset.get_iterator_face_classificaton(args.colormode, args.batch_size, args.data_dir, augmentation_generator, x_col='filename', y_cols=['name'])
   
-  # if args.model == 'FaceNetKeras':
-  #   images, res_images, labels = collect_data_facenet_keras(model_loader, iterator)
-  # elif args.model == 'FaceRecognitionBaselineKeras':
-  #   images, res_images, labels = collect_data_face_recognition_keras(model_loader, iterator)
+  if args.model == 'FaceNetKeras':
+    images, res_images, labels = collect_data_facenet_keras(model_loader, iterator)
+  elif args.model == 'FaceRecognitionBaselineKeras':
+    images, res_images, labels = collect_data_face_recognition_keras(model_loader, iterator)
   
   # pickle.dump(images, open("images.pkl", "wb"))
   # pickle.dump(res_images, open("res_images.pkl", "wb"))
   # pickle.dump(labels, open("labels.pkl", "wb"))
   
-  images = pickle.load(open("images.pkl", "rb"))
-  res_images = pickle.load(open("res_images.pkl", "rb"))
-  labels = pickle.load(open("labels.pkl", "rb"))
+  # images = pickle.load(open("images.pkl", "rb"))
+  # res_images = pickle.load(open("res_images.pkl", "rb"))
+  # labels = pickle.load(open("labels.pkl", "rb"))
   
+  # get the identity to plot
   identity = np.concatenate(labels).flatten()[args.face_id]
   
   _labels = np.concatenate(labels).flatten()
@@ -259,7 +290,8 @@ if __name__ == "__main__":
   
   from time import time
   t1 = time()
-  mlp = MLPClassifier(max_iter=1000).fit(np.concatenate([X_train, X_train_other], axis=0), 
+  # perform face verification by MLPClassifier
+  mlp = MLPClassifier(max_iter=1000).fit(np.concatenate([X_train, X_train_other], axis=0),
                             np.concatenate([y_train, y_train_other], axis=0))
   
   X_test_full = np.concatenate([X_test, X_test_other], axis=0)
@@ -277,6 +309,7 @@ if __name__ == "__main__":
   
   import seaborn as sns
   
+  # start the mlflow experiment
   with mlflow.start_run(experiment_id=args.experiment_id):
     
     y_pred_proba = mlp.predict_proba(np.concatenate([X_test, X_test_other], axis=0))

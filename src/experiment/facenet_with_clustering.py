@@ -27,15 +27,31 @@ from sklearn.metrics.cluster import homogeneity_score, completeness_score, v_mea
 class FaceNetWithClusteringExperiment(FaceNetWithClassifierExperiment):
   
   def euclidean_distances(self, embeddings):
+    """
+    Get the euclidean distances
+    @param embeddings:
+    @return:
+    """
     return euclidean_distances(embeddings)
   
   def cluster_embeddings(self, euclidean_embeddings_train, min_samples, eps):
+    """
+    Get the cluster embeddings
+    @param euclidean_embeddings_train:
+    @param min_samples:
+    @param eps:
+    @return:
+    """
     self.db = DBSCAN(eps=eps, min_samples=min_samples, metric='precomputed')
     self.db.fit(euclidean_embeddings_train)
     
     return self.db
 
   def performance_analysis():
+    """
+    Conduct performance analysis
+    @return:
+    """
     model = load_model("/content/facenet_keras.h5")
 
     batch_size = 128
@@ -43,6 +59,8 @@ class FaceNetWithClusteringExperiment(FaceNetWithClassifierExperiment):
     def run_algorithm(X):
       """
       Runs the HyperParameter Tuning for Effective Clustering
+      @param X:
+      @return: tuple()
       """
 
       idx = 0

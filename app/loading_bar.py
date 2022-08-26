@@ -16,6 +16,6 @@ def disconnect(sid):
   print(sid, 'disconnect')
 
 @sio.event
-def status(sid, data):
+async def status(sid, data):
   print("status received with ", data)
   sio.emit('uploadProgress', data)

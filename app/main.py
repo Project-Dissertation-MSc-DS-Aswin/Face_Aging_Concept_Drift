@@ -29,6 +29,7 @@ from typing import Union, List
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 import socketio
+import config
 
 sio = socketio.Client()
 

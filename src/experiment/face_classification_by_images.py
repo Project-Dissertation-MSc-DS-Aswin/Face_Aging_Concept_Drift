@@ -13,6 +13,13 @@ from time import time
 class FaceClassificationByImages:
   
   def __init__(self, dataset, logger, model_loader, detector=None):
+    """
+    __init__ function
+    @param dataset:
+    @param logger:
+    @param model_loader:
+    @param detector:
+    """
     self.dataset = dataset
     self.logger = logger
     self.model_loader = model_loader
@@ -20,15 +27,36 @@ class FaceClassificationByImages:
     self.detector = detector
     
   def set_dataset(self, dataset):
+    """
+    Set the dataset
+    @param dataset:
+    @return:
+    """
     self.dataset = dataset
 
   def set_logger(self, logger):
+    """
+    Set the logger
+    @param logger:
+    @return:
+    """
     self.logger = logger
 
   def set_model_loader(self, model_loader):
+    """
+    Set the model loader
+    @param model_loader:
+    @return:
+    """
     self.model_loader = model_loader
     
   def collect_data(self, train_iterator, output_size):
+    """
+    Collect the data
+    @param train_iterator:
+    @param output_size:
+    @return:
+    """
     images_bw = []
     classes = []
     # Get input and output tensors
@@ -47,6 +75,11 @@ class FaceClassificationByImages:
     return np.vstack(images_bw), classes
   
   def face_detect(self, image):
+    """
+    Detect Faces
+    @param image:
+    @return:
+    """
     model_loader = self.model_loader
     model_loader.resize(image)
     results = model_loader.infer(image)
@@ -54,6 +87,12 @@ class FaceClassificationByImages:
     return results
   
   def preprocess_and_split(self, images_bw, classes):
+    """
+    Preprocess and split the images
+    @param images_bw:
+    @param classes:
+    @return:
+    """
     X_train, X_test, y_train, y_test = [], [], [], []
     for i in range(len(classes)//117):
       _X_train, _X_test, _y_train, _y_test = train_test_split(
@@ -72,6 +111,12 @@ class FaceClassificationByImages:
     return X_train, X_test, y_train, y_test
   
   def pca_transform(self, X_train, X_test):
+    """
+    Apply PCA transform to training and testing set
+    @param X_train:
+    @param X_test:
+    @return:
+    """
     h, w = self.dataset.dim
     
     n_components = 5
@@ -94,6 +139,12 @@ class FaceClassificationByImages:
     return X_train_pca, X_test_pca, eigenfaces, pca
   
   def train(self, X_train_pca, y_train):
+    """
+    Train the classifier model
+    @param X_train_pca:
+    @param y_train:
+    @return:
+    """
     print("Fitting the classifier to the training set")
     t0 = time()
     param_grid = {
@@ -111,6 +162,13 @@ class FaceClassificationByImages:
     return clf
     
   def score(self, clf, X_test_pca, y_test):
+    """
+    Score the classifier model
+    @param clf:
+    @param X_test_pca:
+    @param y_test:
+    @return:
+    """
     y_pred = clf.predict(X_test_pca)
     
     print("""Score:

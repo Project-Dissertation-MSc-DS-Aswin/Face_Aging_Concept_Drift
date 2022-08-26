@@ -79,6 +79,11 @@ if type(args.input_shape) == str:
     print(args.input_shape)
     
 def collect_images(train_iterator):
+    """
+    Collect the images using train_iterator
+    @param train_iterator:
+    @return: np.ndarray
+    """
     images = []
     # Get input and output tensors
     for ii in tqdm(range(len(train_iterator))):
@@ -88,7 +93,15 @@ def collect_images(train_iterator):
     return np.vstack(images)
   
 def load_dataset(args, whylogs, no_of_samples, colormode, input_shape=(-1,160,160,3)):
-  
+    """
+    Load the dataset
+    @param args:
+    @param whylogs:
+    @param no_of_samples:
+    @param colormode:
+    @param input_shape:
+    @return: tuple()
+    """
     dataset = None
     augmentation_generator = None
     if args.dataset == "agedb":
@@ -112,6 +125,13 @@ def load_dataset(args, whylogs, no_of_samples, colormode, input_shape=(-1,160,16
     return dataset, augmentation_generator
   
 def get_reduced_metadata(args, dataset, seed=1000):
+  """
+  Get reduced metadata by filtering pandas
+  @param args:
+  @param dataset:
+  @param seed:
+  @return: pd.DataFrame()
+  """
   if args.dataset == "fgnet":
     return dataset.metadata
   elif args.dataset == "agedb":
@@ -129,9 +149,26 @@ def get_reduced_metadata(args, dataset, seed=1000):
   
 def execute_drift_hypothesis(dataset, patches, ii, N=100, delta=25):
     
+    """
+    Execute drift hypothesis
+    @param dataset:
+    @param patches:
+    @param ii:
+    @param N:
+    @param delta:
+    @return:
+    """
     l = 1e-15
     
     def drift_detection(lambda_, patches, N=N, delta=delta):
+        """
+        Drift detection
+        @param lambda_:
+        @param patches:
+        @param N:
+        @param delta:
+        @return:
+        """
         s_f1 = 0
         diff1 = 0
         T_h = -np.log(lambda_)
@@ -189,23 +226,30 @@ def execute_drift_hypothesis(dataset, patches, ii, N=100, delta=25):
 
 if __name__ == "__main__":
     
+    # set mlflow tracking URI
     mlflow.set_tracking_uri(args.tracking_uri)
 
+    # choose the model
     if args.model == 'FaceNetKeras':
         model_loader = FaceNetKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
     elif args.model == 'FaceRecognitionBaselineKeras':
         model_loader = FaceRecognitionBaselineKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
     
+    # load the model
     model_loader.load_model()
 
+    # load the dataset
     dataset, augmentation_generator = load_dataset(args, whylogs, args.no_of_samples, 'rgb', input_shape=args.input_shape)
     
+    # set the metadata
     dataset.set_metadata(
         get_reduced_metadata(args, dataset)
     )
     
+    # collect the images
     images = collect_images(dataset.iterator)
     
+    # choose the data collection method using two separate models
     if args.model == 'FaceNetKeras':
         embeddings = model_loader.infer(l2_normalize(prewhiten(images.reshape(-1,args.input_shape[1], args.input_shape[2],3))))
     elif args.model == 'FaceRecognitionBaselineKeras':
@@ -213,8 +257,7 @@ if __name__ == "__main__":
         
     # embeddings_cacd = pickle.load(open("../data_collection/embeddings_cacd_age_estimations.pkl"))
     
-    
-    
+    # select the identity that are unique
     if args.dataset == 'agedb':
       ident = np.unique(dataset.metadata['name'])
     elif args.dataset == 'cacd':
@@ -234,4 +277,5 @@ if __name__ == "__main__":
       total_df.append(df_orig)
       
     total_df = pd.concat(total_df, axis=0)
+    # print out the cda fedavg algorithm results
     total_df.to_csv(args.cda_fedavg_observation)

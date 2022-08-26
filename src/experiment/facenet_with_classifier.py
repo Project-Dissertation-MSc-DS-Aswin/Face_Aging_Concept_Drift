@@ -20,68 +20,108 @@ from mlflow.tracking import MlflowClient
 from mlflow.tracking.fluent import _get_or_start_run
 
 def collect_data_face_recognition_keras(model_loader, train_iterator):
-  res_images = []
-  y_classes = []
-  files = []
-  ages = []
-  labels = []
-  # Get input and output tensors
-  classes_counter = 0
-  for i in tqdm(range(len(train_iterator)-1)):
-    X, (y_age, y_filename, y_label) = train_iterator[i]
+    """
+    Collect Face data for recognition (keras)
+    @param model_loader: 
+    @param train_iterator: 
+    @return: 
+    """
+    res_images = []
+    y_classes = []
+    files = []
+    ages = []
+    labels = []
+    # Get input and output tensors
+    classes_counter = 0
+    for i in tqdm(range(len(train_iterator)-1)):
+        X, (y_age, y_filename, y_label) = train_iterator[i]
     # res_images.append(model_loader.infer(l2_normalize(prewhiten(X))))
-    classes = y_label
-    unq_classes = np.unique(classes)
-    y_valid = np.zeros((len(y_label), 435))
+        classes = y_label
+        unq_classes = np.unique(classes)
+        y_valid = np.zeros((len(y_label), 435))
     for c in unq_classes:
-      y_valid[classes==c, classes_counter] = 1
+      y_valid[classes==c, np.random.randint(0, 435)] = 1
       classes_counter += 1
     res_images.append(model_loader.infer([X/255., y_valid]))
     labels += y_label.tolist()
     files += y_filename.tolist()
     ages += y_age.tolist()
-
-  return res_images, files, ages, labels
+    
+    return res_images, files, ages, labels
 
 def collect_data_facenet_keras(model_loader, train_iterator):
-  res_images = []
-  files = []
-  ages = []
-  labels = []
-  # Get input and output tensors
-  for i in tqdm(range(len(train_iterator))):
-    X, (y_age, y_filename, y_label) = train_iterator[i]
-    res_images.append(model_loader.infer(l2_normalize(prewhiten(X))))
+    """
+    Collect data for facenet keras
+    @param model_loader:
+    @param train_iterator:
+    @return:
+    """
+    res_images = []
+    files = []
+    ages = []
+    labels = []
+    # Get input and output tensors
+    for i in tqdm(range(len(train_iterator))):
+        X, (y_age, y_filename, y_label) = train_iterator[i]
+        res_images.append(model_loader.infer(l2_normalize(prewhiten(X))))
     labels += y_label.tolist()
     files += y_filename.tolist()
     ages += y_age.tolist()
-    
-  return res_images, files, ages, labels
+
+    return res_images, files, ages, labels
 
 class FaceNetWithClassifierExperiment:
   
   def __init__(self, dataset, logger=None, model_loader=None):
+    """
+    __init__ function for facenet with classifier experiment
+    @param dataset:
+    @param logger:
+    @param model_loader:
+    """
     self.dataset = dataset
     self.logger = logger
     self.model_loader = model_loader
     self.batchno = 0
     
   def set_dataset(self, dataset):
+    """
+    Set the dataset
+    @param dataset:
+    @return:
+    """
     self.dataset = dataset
 
   def set_logger(self, logger):
+    """
+    Set the logger
+    @param logger:
+    @return:
+    """
     self.logger = logger
 
   def set_model_loader(self, model_loader):
+    """
+    Set the model loader
+    @param model_loader:
+    @return:
+    """
     self.model_loader = model_loader
     
   def collect_data(self, data_collection_pkl, face_classification_iterator, model=None):
+    """
+    Collect the data from FaceNetKeras or FaceRecognitionUsing CVAE
+    @param data_collection_pkl:
+    @param face_classification_iterator:
+    @param model:
+    @return:
+    """
     if os.path.isfile(data_collection_pkl):
-      embeddings = pickle.load(data_collection_pkl)
+        embeddings = pickle.load(data_collection_pkl)
     elif model == 'FaceNetKeras':
-      embeddings, files, ages, labels = collect_data_facenet_keras(self.model_loader, face_classification_iterator)
+        embeddings, files, ages, labels = collect_data_facenet_keras(self.model_loader, face_classification_iterator)
     elif model == 'FaceRecognitionBaselineKeras':
-      embeddings, files, ages, labels = collect_data_face_recognition_keras(self.model_loader, face_classification_iterator)
+        embeddings, files, ages, labels = collect_data_face_recognition_keras(self.model_loader, face_classification_iterator)
       
     return tf.concat(embeddings, axis=0), files, ages, labels
   
@@ -89,15 +129,42 @@ class FaceNetWithClassifierExperiment:
 class FaceNetWithClassifierPredictor:
   
   def __init__(self, metadata, model_loader):
+    """
+    __init__ function
+    @param metadata:
+    @param model_loader:
+    """
     self.metadata = metadata
     self.model_loader = model_loader
-    
+
   def train_and_fit(self, faces_chunk_array_train, face_classes_array_train, faces_chunk_array_test, face_classes_array_test, 
                     base_estimators, svm_embedding_array, 
                     rf_embedding_array, hist_embedding_array, knn_embeding_array, 
                     score_embedding_test, score_embedding_train, voting_classifier_array, face_classes_count_test, 
                     face_classes_count_train, iidx, no_of_classes, original_df, log_file=None):
   
+    """
+    Train and fit function
+    @param faces_chunk_array_train:
+    @param face_classes_array_train:
+    @param faces_chunk_array_test:
+    @param face_classes_array_test:
+    @param base_estimators:
+    @param svm_embedding_array:
+    @param rf_embedding_array:
+    @param hist_embedding_array:
+    @param knn_embeding_array:
+    @param score_embedding_test:
+    @param score_embedding_train:
+    @param voting_classifier_array:
+    @param face_classes_count_test:
+    @param face_classes_count_train:
+    @param iidx:
+    @param no_of_classes:
+    @param original_df:
+    @param log_file:
+    @return:
+    """
     face_classes_train = np.concatenate(face_classes_array_train[iidx*no_of_classes:iidx*no_of_classes+no_of_classes])
     face_classes_test = np.concatenate(face_classes_array_test[iidx*no_of_classes:iidx*no_of_classes+no_of_classes])
     np.random.seed(100)
@@ -137,6 +204,20 @@ class FaceNetWithClassifierPredictor:
   
   def train_and_evaluate(self, faces_chunk_array_train, face_classes_array_train, faces_chunk_array_test, face_classes_array_test, 
                          param_grid, param_grid2, param_grid3, no_of_classes, original_df, log_file="test_data_predictions.csv"):
+    """
+    Function to train and evaluate
+    @param faces_chunk_array_train:
+    @param face_classes_array_train:
+    @param faces_chunk_array_test:
+    @param face_classes_array_test:
+    @param param_grid:
+    @param param_grid2:
+    @param param_grid3:
+    @param no_of_classes:
+    @param original_df:
+    @param log_file:
+    @return:
+    """
     score_embedding_test = []
     score_embedding_train = []
     svm_embedding_array = []
@@ -193,7 +274,19 @@ class FaceNetWithClassifierPredictor:
     
   def test_and_evaluate(self, voting_classifier_array, faces_chunk_array_test, face_classes_array_test, data, embeddings_test, 
                         collect_for='age_drifting', 
-                        age_low=48, age_high=46):
+                        age_low=47, age_high=48):
+    """
+    Function to test and evaluate
+    @param voting_classifier_array:
+    @param faces_chunk_array_test:
+    @param face_classes_array_test:
+    @param data:
+    @param embeddings_test:
+    @param collect_for:
+    @param age_low:
+    @param age_high:
+    @return:
+    """
     voting_classifier_array_copy = copy(voting_classifier_array)
 
     accuracy = {}
@@ -247,6 +340,15 @@ class FaceNetWithClassifierPredictor:
     return accuracy, recall
   
   def make_train_test_split(self, embeddings, files, ages, labels, seed=1000):
+    """
+    Create train test split dataframe
+    @param embeddings:
+    @param files:
+    @param ages:
+    @param labels:
+    @param seed:
+    @return:
+    """
     np.random.seed(1000)
     df = pd.DataFrame(columns=['files', 'ages', 'labels'])
     df['files'] = files
@@ -256,36 +358,51 @@ class FaceNetWithClassifierPredictor:
     files_test = [f for ii, f in enumerate(files) if f not in files_train.tolist()]
     index_train = [files.index(f) for ii, f in enumerate(files_train)]
     index_test = [files.index(f) for ii, f in enumerate(files_test)]
-    
+
     embeddings_train = [np.expand_dims(embeddings[ii], 0) for ii in index_train]
     embeddings_test = [np.expand_dims(embeddings[ii], 0) for ii in index_test]
-    
+
     embeddings_train = tf.concat(embeddings_train, axis=0)
     embeddings_test = tf.concat(embeddings_test, axis=0)
-    
+
     self.embeddings_train = embeddings_train.numpy()
     self.embeddings_test = embeddings_test.numpy()
-    
+
     labels_train = [labels[files.index(f)] for ii, f in enumerate(files_train)]
     labels_test = [labels[files.index(f)] for ii, f in enumerate(files_test)]
-    
+
     ages_train = [ages[files.index(f)] for ii, f in enumerate(files_train)]
     ages_test = [ages[files.index(f)] for ii, f in enumerate(files_test)]
-    
+
     self.files_train = files_train
     self.files_test = files_test
-    
+
     self.ages_train = ages_train
     self.ages_test = ages_test
-    
+
     self.labels_train = labels_train
     self.labels_test = labels_test
     
   # dataframe after splitting the dataset
   def make_dataframe(self, embeddings, labels, ages, files):
+    """
+    Create a DataFrame from labels, ages, files
+    @param embeddings:
+    @param labels:
+    @param ages:
+    @param files:
+    @return:
+    """
     return pd.DataFrame(dict(face_id=list(range(len(embeddings))), name=labels, age=ages, files=files))
   
   def make_data(self, labels_train, embeddings_train, data):
+    """
+    Create train and test data as chunks
+    @param labels_train:
+    @param embeddings_train:
+    @param data:
+    @return:
+    """
     copy_classes = copy(labels_train)
     faces_chunk_train = []
     faces_chunk_array_train = []
@@ -323,6 +440,15 @@ class FaceNetWithClassifierPredictor:
     return faces_chunk_array_train, face_classes_array_train, faces_chunk_array_test, face_classes_array_test
   
   def make_data_age_test_younger(self, labels_train, embeddings_train, data, age_low, age_high):
+    """
+    Create data for test_younger with age_low and age_high
+    @param labels_train:
+    @param embeddings_train:
+    @param data:
+    @param age_low:
+    @param age_high:
+    @return:
+    """
     from copy import copy
     from collections import Counter
     
@@ -364,6 +490,15 @@ class FaceNetWithClassifierPredictor:
     return faces_chunk_array_train_age, face_classes_array_train_age, faces_chunk_array_test_age, face_classes_array_test_age
 
   def make_data_age_train_younger(self, labels_train, embeddings_train, data, age_low, age_high):
+    """
+    Create data for train_younger with age_low and age_high
+    @param labels_train:
+    @param embeddings_train:
+    @param data:
+    @param age_low:
+    @param age_high:
+    @return:
+    """
     from copy import copy
     from collections import Counter
     

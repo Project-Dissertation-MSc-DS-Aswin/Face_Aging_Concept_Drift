@@ -13,6 +13,21 @@ class CACD2000Dataset(DataGenerator):
   
   def __init__(self, logger, metadata_file, 
                list_IDs, color_mode='grayscale', augmentation_generator=None, data_dir=None, batch_size=64, dim=(72,72), n_channels=1, n_classes=2, shuffle=False, valid=False):
+    """
+    __init__ function
+    @param logger:
+    @param metadata_file:
+    @param list_IDs:
+    @param color_mode:
+    @param augmentation_generator:
+    @param data_dir:
+    @param batch_size:
+    @param dim:
+    @param n_channels:
+    @param n_classes:
+    @param shuffle:
+    @param valid:
+    """
     self.logger = logger
     self.metadata_file = metadata_file
     
@@ -27,11 +42,11 @@ class CACD2000Dataset(DataGenerator):
     self.data_dir = data_dir
     self.augmentation_generator = augmentation_generator
 
-  """
-  Loads the metadata of the dataset
-  returns: pd.DataFrame
-  """
   def load_dataset(self, metadata_file):
+    """
+    Loads the metadata of the dataset
+    returns: pd.DataFrame
+    """
     mat = scipy.io.loadmat(metadata_file)
     age, identity, year, feature_1, feature_2, feature_3, feature_4, name = mat['celebrityImageData'][0][0]
     metadata_CACD = pd.DataFrame(np.vstack([age.flatten(), identity.flatten(), year.flatten(), 
@@ -44,6 +59,11 @@ class CACD2000Dataset(DataGenerator):
     return metadata_CACD
   
   def set_metadata(self, metadata):
+    """
+    Set the metadata
+    @param metadata:
+    @return:
+    """
     self.metadata = metadata
     self.iterator = self.get_iterator(self.color_mode, self.batch_size, self.data_dir, self.augmentation_generator, x_col='filename', y_col='identity')
   
@@ -51,19 +71,24 @@ class CACD2000Dataset(DataGenerator):
   Identities
   """
   def load_identity_mapping(self, metadata):
+    """
+    Load the identity mapping
+    @param metadata:
+    @return:
+    """
     identity = metadata['identity']
     self.logger.log({constants.INFO: "Identity mapping successfully loaded"})
     return np.unique(identity)
   
-"""
-AgeDBDataset DataGenerator
-Reference: https://stanford.edu/~shervine/blog/keras-how-to-generate-data-on-the-fly
-"""
 class AgeDBDataset(DataGenerator):
   
   def __init__(self, logger, metadata_file, 
                list_IDs, color_mode='grayscale', augmentation_generator=None, data_dir=None, batch_size=64, dim=(72,72), n_channels=1, n_classes=2, shuffle=False, valid=False, 
                filter_func=None):
+    """
+    AgeDBDataset DataGenerator
+    Reference: https://stanford.edu/~shervine/blog/keras-how-to-generate-data-on-the-fly
+    """
     self.logger = logger
     self.metadata_file = metadata_file
     
@@ -81,11 +106,11 @@ class AgeDBDataset(DataGenerator):
     if self.augmentation_generator:
       self.augmentation_generator = augmentation_generator
 
-  """
-  Loads the metadata of the dataset
-  returns: pd.DataFrame
-  """
   def load_dataset(self, metadata_file, filter_func=None):
+    """
+    Loads the metadata of the dataset
+    returns: pd.DataFrame
+    """
     mat = scipy.io.loadmat(metadata_file)
     self.logger.log({constants.INFO: "Dataset/Metadata successfully loaded"})
     fileno = list(map(lambda x: x[0], mat['fileno'][0]))
@@ -104,13 +129,19 @@ class AgeDBDataset(DataGenerator):
     return metadata_agedb
   
   def set_metadata(self, metadata, class_mode='categorical'):
+    """
+    Set the metadata
+    @param metadata:
+    @param class_mode:
+    @return:
+    """
     self.metadata = metadata
     self.iterator = self.get_iterator(self.color_mode, self.batch_size, self.data_dir, self.augmentation_generator, x_col='filename', y_col='name', class_mode=class_mode)
   
-  """
-  Identities
-  """
   def load_name_mapping(self, metadata):
+    """
+    Identities mapped from name of the dataset
+    """
     names = metadata['name']
     self.logger.log({constants.INFO: "Name mapping successfully loaded"})
     return np.unique(names)
@@ -122,6 +153,21 @@ class FGNETDataset(DataGenerator):
   
   def __init__(self, logger, metadata_file, 
                list_IDs, color_mode='grayscale', augmentation_generator=None, data_dir=None, batch_size=64, dim=(72,72), n_channels=1, n_classes=2, shuffle=False, valid=False):
+    """
+    __init__ function
+    @param logger:
+    @param metadata_file:
+    @param list_IDs:
+    @param color_mode:
+    @param augmentation_generator:
+    @param data_dir:
+    @param batch_size:
+    @param dim:
+    @param n_channels:
+    @param n_classes:
+    @param shuffle:
+    @param valid:
+    """
     self.logger = logger
     self.metadata_file = metadata_file
     
@@ -140,11 +186,11 @@ class FGNETDataset(DataGenerator):
       self.augmentation_generator = augmentation_generator
       self.iterator = self.get_iterator(color_mode, batch_size, data_dir, augmentation_generator, x_col='filename', y_col='fileno')
     
-  """
-  Loads the metadata of the dataset
-  returns: pd.DataFrame
-  """
   def load_dataset(self, metadata_file):
+    """
+    Loads the metadata of the dataset
+    returns: pd.DataFrame
+    """
     mat = scipy.io.loadmat(metadata_file)
     fileno, filename, age = mat['fileno'], mat['filename'], mat['age']
     metadata_fgnet = pd.DataFrame(
@@ -159,13 +205,18 @@ class FGNETDataset(DataGenerator):
     return metadata_fgnet
   
   def set_metadata(self, metadata):
+    """
+    Set the metadata
+    @param metadata:
+    @return:
+    """
     self.metadata = metadata
     self.iterator = self.get_iterator(self.color_mode, self.batch_size, self.data_dir, self.augmentation_generator, x_col='filename', y_col='fileno')
   
-  """
-  Identities
-  """
   def load_identity_mapping(self, metadata):
+    """
+    Identities mapped from fileno
+    """
     fileno = metadata['fileno']
     self.logger.log({constants.INFO: "Identity mapping successfully loaded"})
     return np.unique(fileno)

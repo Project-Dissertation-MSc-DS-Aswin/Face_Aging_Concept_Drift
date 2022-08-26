@@ -15,11 +15,20 @@ constants = Constants()
 sys.path.append(constants.LATS_REPO)
 
 def preprocess_data_facenet_without_aging(X_train):
+  """
+  Preprocess Data with Facenet without Aging
+  @param X_train:
+  @return:
+  """
   X_train = X_train.astype('float32')
 
   return X_train
 
 def get_augmented_datasets():
+  """
+  Get Augmented Datasets
+  @return: ImageDataGenerator
+  """
   # Create image augmentation
   augmentation_generator = ImageDataGenerator(horizontal_flip=False, # Randomly flip images
                                     vertical_flip=False, # Randomly flip images
@@ -31,9 +40,19 @@ def get_augmented_datasets():
   return augmentation_generator
 
 class KerasModelLoader:
+  """
+  Keras Model Loader
+  """
   dimensions = 128
   
   def __init__(self, logger, model_path, input_shape=None, image_data_format='channels_last'):
+    """
+    __init__ function
+    @param logger:
+    @param model_path:
+    @param input_shape:
+    @param image_data_format:
+    """
     self.logger = logger
     self.model_path = model_path
     self.type = 'keras'
@@ -44,24 +63,32 @@ class KerasModelLoader:
     self.input_w = input_w
     self.input_h = input_h
     self.input_shape = input_shape
-  
-  """
-  Load the Keras Model from model_path
-  """
+
   def load_model(self):
+    """
+    Load the Keras Model from model_path
+    @return:
+    """
     print(os.path.isfile(self.model_path))
     self.model = load_model(self.model_path, compile=False)
     self.logger.log({
       "keras_model_summary": self.model.summary()
     })
     
-  """
-  data: Image
-  """
   def infer(self, data):
+    """
+    data: Image
+    @param data:
+    @return:
+    """
     return self.model.predict(data)
   
   def resize(self, data):
+    """
+    Resize the Image by width and height
+    @param data:
+    @return:
+    """
     return cv2.resize(data, (self.input_w, self.input_h))
   
 class FaceNetKerasModelLoader(KerasModelLoader):
@@ -71,6 +98,14 @@ from keras import regularizers
 
 class ArcFace(keras.layers.Layer):
     def __init__(self, n_classes=10, s=30.0, m=0.50, regularizer=regularizers.l2(0.0001), **kwargs):
+        """
+        __init__ function
+        @param n_classes:
+        @param s:
+        @param m:
+        @param regularizer:
+        @param kwargs:
+        """
         super(ArcFace, self).__init__(**kwargs)
         self.n_classes = n_classes
         self.s = s
@@ -78,6 +113,11 @@ class ArcFace(keras.layers.Layer):
         self.regularizer = regularizers.get(regularizer)
 
     def build(self, input_shape):
+        """
+        Build the model and add weights
+        @param input_shape:
+        @return:
+        """
         super(ArcFace, self).build(input_shape[0])
         self.W = self.add_weight(name='W',
                                 shape=(input_shape[0][-1], self.n_classes),
@@ -86,6 +126,11 @@ class ArcFace(keras.layers.Layer):
                                 regularizer=self.regularizer)
 
     def call(self, inputs):
+        """
+        Call - callback function
+        @param inputs:
+        @return:
+        """
         x, y = inputs
         c = K.shape(x)[-1]
         # normalize feature
@@ -110,9 +155,18 @@ class ArcFace(keras.layers.Layer):
         return logits
 
     def compute_output_shape(self, input_shape):
+        """
+        Compute Output shape
+        @param input_shape:
+        @return:
+        """
         return (None, self.n_classes)
 
     def get_config(self):
+        """
+        Get config
+        @return:
+        """
         config = super().get_config()
         config.update({
             "s": self.s,
@@ -124,10 +178,11 @@ class ArcFace(keras.layers.Layer):
 class FaceRecognitionBaselineKerasModelLoader(KerasModelLoader):
   dimensions = 717
   
-  """
-  Load the Keras Model from model_path
-  """
   def load_model(self):
+    """
+    Load the Keras Model from model_path
+    @return:
+    """
     print(os.path.isfile(self.model_path))
     self.model = load_model(self.model_path, compile=False, custom_objects={"ArcFace": ArcFace})
     self.model = Model(inputs=self.model.inputs, outputs=self.model.layers[-6].output)
@@ -148,6 +203,17 @@ class MNIST10Epochs(KerasModelLoader):
 class YuNetModelLoader:
   
   def __init__(self, logger, model_path, conf_threshold, nms_threshold, backend, target, top_k, input_shape=[1, 96, 96, 1]):
+    """
+    __init__ function of the YuNet Model
+    @param logger:
+    @param model_path:
+    @param conf_threshold:
+    @param nms_threshold:
+    @param backend:
+    @param target:
+    @param top_k:
+    @param input_shape:
+    """
     self.input_shape = input_shape
     (b, input_h, input_w, n_channels) = input_shape
     self.input_w = input_w
@@ -162,6 +228,10 @@ class YuNetModelLoader:
     self.load_model()
   
   def load_model(self):
+    """
+    Load the model into memory
+    @return:
+    """
     self.detector = YuNet(modelPath=self.model_path,
                   inputSize=(self.input_h, self.input_w),
                   confThreshold=self.conf_threshold,
@@ -171,12 +241,19 @@ class YuNetModelLoader:
                   targetId=self.target)
     
   def resize(self, data):
+    """
+    Resize the detector input size
+    @param data:
+    @return:
+    """
     return self.detector.setInputSize((self.input_h, self.input_w))
   
-  """
-  data: Image
-  """
   def infer(self, data):
+    """
+    Inference of the image using YuNet model
+    @param data:
+    @return:
+    """
     return self.detector.infer(data)
   
   

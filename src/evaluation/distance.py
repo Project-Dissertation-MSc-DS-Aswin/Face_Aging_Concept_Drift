@@ -15,6 +15,9 @@ Euclidean Distance
 def euclidean(emb_array1, emb_array2):
   return tf.norm(emb_array1 - emb_array2, ord=2)
 
+"""
+Euclidean Distance and Cosine distance
+"""
 def face_distance(i, x, embeddings):
   
   m = embeddings.shape[0]

@@ -24,6 +24,16 @@ matplotlib.use('Agg')
 class DriftSynthesisByEigenFacesExperiment:
 
     def __init__(self, args, dataset, experiment_dataset, logger=None, model_loader=None, pca=None, init_offset=0):
+        """
+        __init__ function
+        @param args: type
+        @param dataset: DataGenerator
+        @param experiment_dataset: DataGenerator
+        @param logger: whylogs
+        @param model_loader: ModelLoader
+        @param pca: PCA
+        @param init_offset: int
+        """
         self.dataset = dataset
         self.args = args
         self.experiment_dataset = experiment_dataset
@@ -35,26 +45,62 @@ class DriftSynthesisByEigenFacesExperiment:
         self.batchno = 0
 
     def set_dataset(self, dataset):
+        """
+        Set the dataset
+        @param dataset:
+        @return:
+        """
         self.dataset = dataset
 
     def set_logger(self, logger):
+        """
+        Set the logger
+        @param logger:
+        @return:
+        """
         self.logger = logger
 
     def set_model_loader(self, model_loader):
+        """
+        Set the model loader
+        @param model_loader:
+        @return:
+        """
         self.model_loader = model_loader
 
     def eigen_vectors(self):
+        """
+        Get eigen vectors
+        @return:
+        """
         return self.pca.components_.T if self.args.pca_type == 'PCA' else self.pca.eigenvectors_
 
     # b_vector as a matrix, individual rows correspond to a single training example
     def eigen_vector_coefficient(self, eigen_vectors, images_demean):
+        """
+        Get eigen vector coefficient
+        @param eigen_vectors:
+        @param images_demean:
+        @return:
+        """
         return np.matmul(np.linalg.inv(eigen_vectors), images_demean.reshape(len(images_demean), -1))
 
     def mahalanobis_distance(self, eigen_vector_coefficients):
-        
+        """
+        Mahalanobis Distances
+        @param eigen_vector_coefficients:
+        @return:
+        """
         # each of the training example's parameters are considered as eigen vector coefficient
         # covariance of model parameters from the training examples
         def mahalanobis(bn, bm, C):
+            """
+            Mahalanobis distance function
+            @param bn:
+            @param bm:
+            @param C:
+            @return:
+            """
             if len(C.shape) == 0:
                 return ((bn - bm)).dot((bn - bm).T) * C
             else:
@@ -70,6 +116,12 @@ class DriftSynthesisByEigenFacesExperiment:
         return np.diag(distance)
 
     def set_hash_sample_by_distinct(self, identity_grouping_distance, metadata=None):
+        """
+        Set hash sample by DISTINCT
+        @param identity_grouping_distance: Grouping Distances
+        @param metadata: pd.DataFrame
+        @return: pd.DataFrame
+        """
         if metadata is None:
             metadata = self.dataset.metadata
         metadata['hash_sample'] = 0
@@ -83,6 +135,11 @@ class DriftSynthesisByEigenFacesExperiment:
         return metadata
     
     def set_hash_sample_by_dist(self, identity_grouping_distance):
+        """
+        Set Hash Samples by Distribution
+        @param identity_grouping_distance:
+        @return: pd.DataFrame
+        """
         self.dataset.metadata['hash_sample'] = 0
         hist = np.histogram(identity_grouping_distance, bins=self.args.bins)[:-1]
         for ii, distance in enumerate(hist):
@@ -96,7 +153,15 @@ class DriftSynthesisByEigenFacesExperiment:
 
     # solve by lagrangian
     def weights_vector(self, metadata, b_vector, init_offset=None, factor=10, learning_rate=0.001):
-
+        """
+        Weights vector
+        @param metadata: pd.DataFrame
+        @param b_vector: np.ndarray
+        @param init_offset: int
+        @param factor: int
+        @param learning_rate: float
+        @return: tuple
+        """
         b_vector = tf.constant(np.expand_dims(b_vector, 2), dtype=tf.float64)
         
         np.random.seed(1000)
@@ -128,12 +193,27 @@ class DriftSynthesisByEigenFacesExperiment:
         return w, o, mean_age, std_age, age
     
     def aging_manifold(self, weights_vector, b_vector, init_offset=None, mode='image_reconstruction'):
+        """
+        Aging Manifold
+        @param weights_vector: tf.Tensor
+        @param b_vector: np.ndarray
+        @param init_offset: int
+        @param mode: string
+        @return: np.array
+        """
         if mode == 'image_reconstruction':
             return self.aging_function(weights_vector, b_vector, init_offset)
         elif mode == 'image_perturbation':
             return self.aging_function_perturbation(weights_vector, b_vector, init_offset)
     
     def aging_function(self, weights_vector, b_vector, init_offset=None):
+        """
+        Aging Function
+        @param weights_vector: tf.Tensor
+        @param b_vector: np.ndarray
+        @param init_offset: int
+        @return: np.array
+        """
         if init_offset is None:
             init_offset = self.init_offset
         b_vector_new = tf.constant(np.expand_dims(b_vector, 2), dtype=tf.float64)
@@ -141,17 +221,43 @@ class DriftSynthesisByEigenFacesExperiment:
         return result.numpy().flatten()
     
     def weights_vector_perturbation(self, reduced_metadata, b_vector, init_offset=0):
+        """
+        Weights vector by perturbation
+        @param reduced_metadata: pd.DataFrame
+        @param b_vector: np.ndarray
+        @param init_offset: int
+        @return: np.ndarray
+        """
         if not init_offset:
             init_offset = self.init_offset
         w = np.linalg.pinv(b_vector).dot(reduced_metadata['age'] - init_offset)
         return w
 
     def aging_function_perturbation(self, weights_vector, b_vector, init_offset=0):
+        """
+        Aging function by perturbation
+        @param weights_vector: tf.Tensor
+        @param b_vector: np.ndarray
+        @param init_offset: int
+        @return: np.ndarray
+        """
         if not init_offset:
             init_offset = self.init_offset
         return b_vector.dot(weights_vector) + init_offset
     
     def plot_images_with_eigen_faces(self, images, images_demean, weights_vector, offset_vector, b_vector, offset_range, P_pandas, index):
+        """
+        Plot the images with Eigen faces
+        @param images:
+        @param images_demean:
+        @param weights_vector:
+        @param offset_vector:
+        @param b_vector:
+        @param offset_range:
+        @param P_pandas:
+        @param index:
+        @return: tuple
+        """
         figures = []
         choices_array = []
         for i in tqdm(np.unique(self.dataset.metadata['hash_sample'])):
@@ -225,7 +331,23 @@ class DriftSynthesisByEigenFacesExperiment:
     def collect_drift_predictions(self, images, images_demean, weights_vector, offset_vector, 
                                   b_vector, offset_range, P_pandas, index, 
                                   voting_classifier_array, model_loader, drift_beta=1, covariates_beta=100, hash_samples=[]):
-        
+        """
+        Predict Drift according to Drift beta
+        @param images:
+        @param images_demean:
+        @param weights_vector:
+        @param offset_vector:
+        @param b_vector:
+        @param offset_range:
+        @param P_pandas:
+        @param index:
+        @param voting_classifier_array:
+        @param model_loader:
+        @param drift_beta:
+        @param covariates_beta:
+        @param hash_samples:
+        @return: tuple
+        """
         def data_predictions(i, beta):
             predictions_classes_array = []
             reconstr_images = []
@@ -253,12 +375,12 @@ class DriftSynthesisByEigenFacesExperiment:
                 P_pandas_1 = P_pandas.loc[index.index.values[self.dataset.metadata['hash_sample'] == i],
                                         index.index.values[self.dataset.metadata['hash_sample'] == i]]
 
-                images_syn = images_demean.copy().reshape(len(self.dataset), -1)
+                images_syn = images_demean.copy().reshape(len(images_demean), -1)
                 images_syn[self.dataset.metadata['hash_sample'] == i] = P_pandas_1.values.dot(b_new)
 
                 new_images = \
                     (images_syn[self.dataset.metadata['hash_sample'] == i]) + \
-                    images_demean.reshape(len(self.dataset), -1)[self.dataset.metadata['hash_sample'] == i]
+                    images_demean.reshape(len(images_demean), -1)[self.dataset.metadata['hash_sample'] == i]
                     
                 choices = list(range(len(new_images)))
                 choices = np.unique(choices)
@@ -338,6 +460,8 @@ class DriftSynthesisByEigenFacesExperiment:
                         
                         idx = np.where(matches == 1)
                         idx = idx[0][0] if len(idx[0]) > 0 else None
+                        idx2 = np.where(virtual_matches == 1)
+                        idx2 = idx2[0][0] if len(idx2[0]) > 0 else None
                         if (idx is not None) and (pred_original[idx] == pred_drifted[idx]):
                             statistical_drift_true_positives = 1
                             statistical_drift_true_negatives = 0
@@ -347,38 +471,24 @@ class DriftSynthesisByEigenFacesExperiment:
                         else:
                             statistical_drift_undefined = 1
                             
-                        pred_virtual = pred_drifted[idx] if idx is not None else -1
-                        pred_orig = pred_original[idx] if idx is not None else -1
+                        found = idx
+                        found2 = idx2
                         
-                        values_virtual = [np.max(v) for v in list(pred_proba_drifted.values())]
-                        arg_values_virtual = [np.argmax(v) for v in list(pred_proba_drifted.values())]
-                        arg_values_virtual_max = np.argmax(values_virtual)
-                        classes_virtual = classes_orig[arg_values_virtual_max]
-                        pred_proba_virtual = pred_proba_drifted[arg_values_virtual_max]
-                        arg_values_pred_proba_virtual = np.argmax(pred_proba_virtual)
-                        pred_proba_virtual = pred_proba_virtual[arg_values_pred_proba_virtual]
+                        if found:
+                            pred_orig = pred_original[found]
+                            proba_orig = pred_proba_original[found][np.where(classes_orig[found] == pred_orig)[0]]
+                        else:
+                            for ij in classes_orig.keys():
+                                if self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'identity'].iloc[choice] in classes_orig[ij].tolist():
+                                    found = ij
+                            pred_orig = pred_original[found]
+                            proba_orig = pred_proba_original[found][np.where(classes_orig[found] == pred_orig)[0]]
+                        pred_virtual = pred_drifted[found]
+                        proba_virtual = pred_proba_drifted[found][np.where(classes_orig[found] == pred_orig)[0]]
                         
-                        if pred_virtual == -1:
-                            pred_virtual = classes_virtual[np.argmax(arg_values_pred_proba_virtual)]
-                        
-                        values_orig = [np.max(v) for v in list(pred_proba_original.values())]
-                        arg_values_orig = [np.argmax(v) for v in list(pred_proba_original.values())]
-                        arg_values_orig_max = np.argmax(values_orig)
-                        classes_actual = classes_orig[arg_values_orig_max]
-                        pred_proba_orig = pred_proba_original[arg_values_orig_max]
-                        arg_values_pred_proba_orig = np.argmax(pred_proba_orig)
-                        pred_proba_orig = pred_proba_orig[arg_values_pred_proba_orig]
-                        
-                        if pred_orig == -1:    
-                            pred_orig = classes_actual[np.argmax(arg_values_pred_proba_orig)]
-                        
-                    else:
-                        pred_virtual = -1
-                        pred_orig = -1
-                    
                     data.append([i, offset, covariates_beta, beta,
                         # identity
-                        self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'name'].iloc[choice], 
+                        self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'identity'].iloc[choice], 
                         # age
                         self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'age'].iloc[choice], 
                         # filename
@@ -386,11 +496,11 @@ class DriftSynthesisByEigenFacesExperiment:
                         # predicting original b/w image
                         pred_orig, 
                         # predicted probability, 
-                        pred_proba_orig, 
+                        proba_orig, 
                         # predicting noised image
                         pred_virtual, 
                         # prediction probability, 
-                        pred_proba_virtual, 
+                        proba_virtual, 
                         np.round(f_p_new.iloc[choice], 2),
                         # euclidean distance
                         tf.norm(res1 - res2, ord=2).numpy(), 
@@ -435,7 +545,24 @@ class DriftSynthesisByEigenFacesExperiment:
                                   b_vector, offset, P_pandas, index, voting_classifier_array, 
                                   model_loader, args_psnr_error,
                                   drift_type, drift_beta=0):
-        
+        """
+        Collect drift statistics
+        @param images:
+        @param images_bw:
+        @param images_demean:
+        @param weights_vector:
+        @param offset_vector:
+        @param b_vector:
+        @param offset:
+        @param P_pandas:
+        @param index:
+        @param voting_classifier_array:
+        @param model_loader:
+        @param args_psnr_error:
+        @param drift_type:
+        @param drift_beta:
+        @return: tuple
+        """
         def data_predictions(i, psnr_error, res1_images, res2_images, psnr_pca, mse_t_list, mse_p_list, mse_corr_list):
             images_copy = images
             images_demean_copy = images_demean
@@ -455,12 +582,13 @@ class DriftSynthesisByEigenFacesExperiment:
             P_pandas_1 = P_pandas.loc[index.index.values[self.dataset.metadata['hash_sample'] == i],
                                     index.index.values[self.dataset.metadata['hash_sample'] == i]]
 
-            images_syn = images_demean_copy.copy().reshape(len(self.dataset), -1)
+            images_syn = images_demean_copy.copy().reshape(len(images_demean), -1)
+            print(P_pandas_1.shape, b_new.shape)
             images_syn[self.dataset.metadata['hash_sample'] == i] = P_pandas_1.values.dot(b_new)
 
             new_images = \
                 (images_syn[self.dataset.metadata['hash_sample'] == i]) + \
-                images_demean_copy.reshape(len(self.dataset), -1)[self.dataset.metadata['hash_sample'] == i]
+                images_demean_copy.reshape(len(images_demean), -1)[self.dataset.metadata['hash_sample'] == i]
                 
             filenames = self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'filename'].values
             ages = self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'age'].values
@@ -707,7 +835,11 @@ class DriftSynthesisByEigenFacesExperiment:
         return data
     
     def plot_histogram_of_face_distances(self, predictions_classes):
-        
+        """
+        Histogram of Face distances
+        @param predictions_classes: pd.DataFrame
+        @return: plt.figure
+        """
         fig = plt.figure(figsize=(12,8))
         plt.hist(predictions_classes['euclidean'], color='blue')
         plt.hist(predictions_classes['cosine'], color='orange')
@@ -717,7 +849,11 @@ class DriftSynthesisByEigenFacesExperiment:
         return fig
     
     def plot_scatter_of_drift_confusion_matrix(self, predictions_classes):
-        
+        """
+        Plot scatter plot of drift confusion matrix
+        @param predictions_classes:
+        @return:
+        """
         fig = plt.figure(figsize=(12,8))
         plt.scatter(predictions_classes.loc[(predictions_classes['TP'] != 1) & \
                                     (predictions_classes['FN'] != 1), 'euclidean'], 
@@ -732,6 +868,16 @@ class DriftSynthesisByEigenFacesExperiment:
         return fig
     
     def drift_type_function(self, drift_type, original_image, virtual_image, beta=0, seed=1000, function_type='beta'):
+        """
+        Drift type function
+        @param drift_type:
+        @param original_image:
+        @param virtual_image:
+        @param beta:
+        @param seed:
+        @param function_type:
+        @return: np.ndarray
+        """
         if drift_type == 'incremental' and function_type == 'beta':
             return original_image - beta * virtual_image
         elif drift_type == 'incremental' and function_type == 'morph':
@@ -745,6 +891,12 @@ class DriftSynthesisByEigenFacesExperiment:
             return original_image - np.sin(beta) * virtual_image
 
     def get_name_from_filename(self, filenames, dataset='agedb'):
+        """
+        Gte name from filename
+        @param filenames:
+        @param dataset:
+        @return: list
+        """
         if dataset == 'agedb':
             return [filename.split("_")[1] for filename in filenames]
         elif dataset == 'cacd2000':

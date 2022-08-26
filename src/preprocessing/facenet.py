@@ -1,6 +1,11 @@
 import numpy as np
 
 def prewhiten(x):
+    """
+    Prewhiten the image for the facenet network
+    @param x:
+    @return:
+    """
     if x.ndim == 4:
         axis = (1, 2, 3)
         size = x[0].size
@@ -17,5 +22,12 @@ def prewhiten(x):
     return y
 
 def l2_normalize(x, axis=-1, epsilon=1e-10):
+    """
+    calculate the L2 normal for the FaceNet network
+    @param x:
+    @param axis:
+    @param epsilon:
+    @return:
+    """
     output = x / np.sqrt(np.maximum(np.sum(np.square(x), axis=axis, keepdims=True), epsilon))
     return output

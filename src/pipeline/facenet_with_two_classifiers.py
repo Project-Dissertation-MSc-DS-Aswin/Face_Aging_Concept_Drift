@@ -107,7 +107,7 @@ def get_reduced_metadata(args, dataset, seed=1000):
   elif args.dataset == "agedb":
     np.random.seed(seed)
     names = dataset.metadata.groupby('name').count()
-    names = names[names['age'] > 40]
+    names = names[names['age'] > 60]
     names = names.index.get_level_values(0)
     idx = [dataset.metadata['name'] == name for name in names]
     result_idx = [False]*len(dataset.metadata)
@@ -117,7 +117,15 @@ def get_reduced_metadata(args, dataset, seed=1000):
     return dataset.metadata.loc[result_idx].reset_index()
   elif args.dataset == "cacd":
     np.random.seed(seed)
-    return dataset.metadata.sample(args.no_of_samples).reset_index()
+    names = dataset.metadata.groupby('name').count()
+    names = names[names['age'] > 90]
+    names = names.index.get_level_values(0)
+    idx = [dataset.metadata['name'] == name for name in names]
+    result_idx = [False]*len(dataset.metadata)
+    for i in idx:
+      result_idx = np.logical_or(result_idx, i)
+    
+    return dataset.metadata.loc[result_idx].reset_index()
   
 if __name__ == "__main__":
   
@@ -260,10 +268,10 @@ if __name__ == "__main__":
       algorithm.embeddings_test = scaler.transform(algorithm.embeddings_test)
       dataframe = algorithm.make_dataframe(algorithm.embeddings_train, algorithm.labels_train, algorithm.ages_train, algorithm.files_train)
       faces_chunk_array_train_younger, face_classes_array_train_younger, faces_chunk_array_test_older, face_classes_array_test_older = \
-        algorithm.make_data_age_train_younger(algorithm.labels_train, algorithm.embeddings_train, dataframe, age_low=48, age_high=46)
+        algorithm.make_data_age_train_younger(algorithm.labels_train, algorithm.embeddings_train, dataframe, age_low=47, age_high=48)
         
       faces_chunk_array_train_older, face_classes_array_train_older, faces_chunk_array_test_younger, face_classes_array_test_younger = \
-        algorithm.make_data_age_test_younger(algorithm.labels_train, algorithm.embeddings_train, dataframe, age_low=48, age_high=46)
+        algorithm.make_data_age_test_younger(algorithm.labels_train, algorithm.embeddings_train, dataframe, age_low=47, age_high=48)
         
       with mlflow.start_run(experiment_id=args.experiment_id, run_name='FaceNet with Classifier'):
         score_embedding_test_younger, score_embedding_train_younger, face_classes_count_test_younger, face_classes_count_train_younger, (voting_classifier_array_younger, 
@@ -357,7 +365,7 @@ if __name__ == "__main__":
         # test younger
         dataframe = algorithm.make_dataframe(algorithm.embeddings_test, algorithm.labels_test, algorithm.ages_test, algorithm.files_test)
         faces_chunk_array_train, face_classes_array_train, faces_chunk_array_test, face_classes_array_test = \
-          algorithm.make_data_age_test_younger(algorithm.labels_test, algorithm.embeddings_test, dataframe, age_low=48, age_high=46)
+          algorithm.make_data_age_test_younger(algorithm.labels_test, algorithm.embeddings_test, dataframe, age_low=47, age_high=48)
         
         faces_chunk_array_test, face_classes_array_test = np.concatenate([faces_chunk_array_train, faces_chunk_array_test], axis=0), np.concatenate([face_classes_array_train, face_classes_array_test], axis=0)
         
@@ -372,7 +380,7 @@ if __name__ == "__main__":
         # train younger
         dataframe = algorithm.make_dataframe(algorithm.embeddings_test, algorithm.labels_test, algorithm.ages_test, algorithm.files_test)
         faces_chunk_array_train, face_classes_array_train, faces_chunk_array_test, face_classes_array_test = \
-          algorithm.make_data_age_train_younger(algorithm.labels_test, algorithm.embeddings_test, dataframe, age_low=48, age_high=46)
+          algorithm.make_data_age_train_younger(algorithm.labels_test, algorithm.embeddings_test, dataframe, age_low=47, age_high=48)
         
         faces_chunk_array_test, face_classes_array_test = np.concatenate([faces_chunk_array_train, faces_chunk_array_test], axis=0), np.concatenate([face_classes_array_train, face_classes_array_test], axis=0)
         
