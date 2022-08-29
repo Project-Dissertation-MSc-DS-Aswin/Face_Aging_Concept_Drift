@@ -117,6 +117,15 @@ def get_age_ranges(metadata, identity_key='name'):
     print(np.unique(full_age_range))
     
 def load_dataset(args, whylogs, image_dim, no_of_samples, colormode):
+    """
+    Load the dataset
+    @param args:
+    @param whylogs:
+    @param image_dim:
+    @param no_of_samples:
+    @param colormode:
+    @return: tuple()
+    """
     dataset = None
     augmentation_generator = None
     if args.dataset == "agedb":
@@ -138,6 +147,13 @@ def load_dataset(args, whylogs, image_dim, no_of_samples, colormode):
     return dataset, augmentation_generator
 
 def get_reduced_metadata(args, dataset, seed=1000):
+  """
+  Get reduced metadata
+  @param args:
+  @param dataset:
+  @param seed:
+  @return: tuple()
+  """
   if args.dataset == "fgnet":
     return dataset.metadata
   elif args.dataset == "agedb":
@@ -158,7 +174,15 @@ def get_reduced_metadata(args, dataset, seed=1000):
     return dataset.metadata.sample(args.no_of_samples).reset_index()
 
 def p_value_real_calculate_age_by_age(mean_list, std_list, sem_list, count_list, cols):
-    
+    """
+    calculate P-value for age-by-age comparison
+    @param mean_list:
+    @param std_list:
+    @param sem_list:
+    @param count_list:
+    @param cols:
+    @return: np.ndarray
+    """
     # splitting the findings into 2
     p_value = np.ones((len(cols),len(cols),len(mean_list)))
     for i in tqdm(range(len(cols))):
@@ -202,6 +226,13 @@ def p_value_real_calculate_age_by_age(mean_list, std_list, sem_list, count_list,
     return p_value
 
 def power_calculate_age_by_age(p_value, cols, sig=0.05):
+    """
+    calculate power for age-by-age comparison
+    @param p_value:
+    @param cols:
+    @param sig:
+    @return: tuple()
+    """
     prob_test_significant = p_value.flatten()[p_value.flatten() < sig].shape[0] / p_value.flatten().shape[0] # assumption that power of test is 0.8
     power = np.zeros((len(cols),len(cols)))
     alpha = np.zeros((len(cols),len(cols)))
@@ -221,36 +252,48 @@ def power_calculate_age_by_age(p_value, cols, sig=0.05):
 
 if __name__ == "__main__":
     
+    # set mlflow experiment
     mlflow.set_tracking_uri(args.tracking_uri)
 
+    # choose model
     if args.model == 'FaceNetKeras':
         model_loader = FaceNetKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
     elif args.model == 'FaceRecognitionBaselineKeras':
         model_loader = FaceRecognitionBaselineKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
     
+    # load the model
     model_loader.load_model()
 
+    # load the dataset for PCA experiment
     dataset, augmentation_generator = load_dataset(args, whylogs, (96,96), args.no_of_pca_samples, 'grayscale')
+    # load the dataset for experiment
     experiment_dataset, augmentation_generator = load_dataset(args, whylogs, (args.input_shape[1], args.input_shape[2]), args.no_of_samples, 'rgb')
     
+    # copy the dataset metadata
     metadata_copy = copy(dataset.metadata)
     
+    # PCA args
     pca_args = copy(args)
     pca_args.no_of_samples = pca_args.no_of_pca_samples
+    # set the matadata for PCA experiment
     dataset.set_metadata(
         get_reduced_metadata(pca_args, dataset)
     )
     
+    # set the metadata for experiment
     experiment_dataset.set_metadata(
         get_reduced_metadata(args, experiment_dataset)
     )
     
+    # collect b/w images
     images_bw = collect_images(dataset.iterator)
     if args.noise_error:
         np.random.seed(1000)
         print("Adding error in b/w images of " + str(args.noise_error))
         images_bw += np.random.normal(0, args.noise_error, size=(images_bw.shape))
+    # demean the images
     images_new = demean_images(images_bw, len(dataset))
+    # apply PCA on images
     if not os.path.isfile(args.pca_covariates_pkl):
         images_cov = images_covariance(images_new, len(images_new))
         P, pca, X_pca = pca_covariates(images_cov, args.pca_type)
@@ -260,21 +303,28 @@ if __name__ == "__main__":
         pca = pickle.load(open(args.pca_covariates_pkl, "rb"))
 
     print(pca)
+    # experiment create using image reconstruction
     experiment = DriftSynthesisByEigenFacesExperiment(args, dataset, experiment_dataset, logger=whylogs, model_loader=model_loader, pca=pca,
                                                       init_offset=0)
 
-    P_pandas = pd.DataFrame(pca.components_.T if args.pca_type == 'PCA' else pca.eigenvectors_, 
+    # extract the Patch of data for computing the image
+    P_pandas = pd.DataFrame(pca.components_.T if args.pca_type == 'PCA' else pca.eigenvectors_,
                             columns=list(range(pca.components_.T.shape[1] if args.pca_type == 'PCA' else pca.eigenvectors_.shape[1])))
+    # apply index on the image
     index = experiment.dataset.metadata['age'].reset_index()
 
+    # collect images using experiment dataset
     images = collect_images(experiment_dataset.iterator)
     if args.noise_error:
         np.random.seed(1000)
         print("Adding error of " + str(args.noise_error))
         images += np.random.normal(0, args.noise_error, size=(images.shape))
         
+    # get the eigen vectors
     eigen_vectors = experiment.eigen_vectors()
+    # extract the eigen vector coefficient
     b_vector = experiment.eigen_vector_coefficient(eigen_vectors, images_new)
+    # image recoinstruction method
     if args.mode == 'image_reconstruction':
         weights_vector, offset, mean_age, std_age, age = experiment.weights_vector(experiment.dataset.metadata, b_vector)
         
@@ -293,21 +343,27 @@ if __name__ == "__main__":
         
     choices_array = None
     offset = 2000
-    if args.log_images == 's3':
 
+    if args.log_images == 's3':
+        # set the identity grouping distance
         experiment.dataset.metadata['identity_grouping_distance'] = 0.0
 
+        # extract mahalanobis distances
         distances = experiment.mahalanobis_distance(b_vector)
         
+        # set the mahalanobis distances to metadata DataFrame
         experiment.dataset.metadata['identity_grouping_distance'] = distances
         
+        # select the DISTINCT or DISTRIBUTION mode for assigning hash_sample
         if args.grouping_distance_type == 'DISTINCT':
             experiment.dataset.metadata = experiment.set_hash_sample_by_distinct(experiment.dataset.metadata['identity_grouping_distance'])
         elif args.grouping_distance_type == 'DIST':
             experiment.dataset.metadata = experiment.set_hash_sample_by_dist(experiment.dataset.metadata['identity_grouping_distance'])
             
+    # get the voting classifier array
     voting_classifier_array = pickle.load(open(args.classifier, 'rb'))
     
+    # incremental, gradual, sudden or reoccurring drift
     if args.drift_type == 'incremental':
         iter_list = np.arange(-1, args.drift_beta, 0.1 if args.drift_beta > 0 else -0.1)
     elif args.drift_type == 'gradual':
@@ -346,22 +402,31 @@ if __name__ == "__main__":
     
     # for psnr in np.arange(0.01, args.psnr_error, 0.1):
     
+    # iterate through beta
     for beta in tqdm(iter_list):
     
-        data = experiment.collect_drift_statistics(images, images_bw, images_new, weights_vector, offset, 
+        # collect drift statistics
+        data = experiment.collect_drift_statistics(images, images_bw, images_new, weights_vector, offset,
                                     b_vector, offset, P_pandas, index, voting_classifier_array, 
                                     model_loader, psnr, args.drift_type, drift_beta=0.5)
         
+        # get all inference images
         all_inference_images = pickle.load(open(args.inference_images_pkl, "rb"))
         
+        # stack the inference images
         all_inference_images = np.vstack(all_inference_images)
         
+        # extract the variables from tuple()
         (inference_images, inference_images_orig, filenames, ages_list, psnr_pca, mse_t_list, mse_p_list, mse_corr_list) = data
         
+        # get pairwise euclidean distances for virtual
         euclidean_distances_virtual = euclidean_distances(all_inference_images, inference_images)
+        # get pairwise euclidean distances for real
         euclidean_distances_orig = euclidean_distances(all_inference_images, inference_images_orig)
-        
+
+        # set pairwise euclidean distances into dataframe (virtual)
         data_table_virtual = pd.DataFrame(euclidean_distances_virtual, columns=ages_list)
+        # set pairwise euclidean distances into dataframe (original)
         data_table_orig = pd.DataFrame(euclidean_distances_orig, columns=ages_list)
         
         mean = {}
@@ -369,13 +434,14 @@ if __name__ == "__main__":
         count = {}
         std = {}
 
-        # sparse matrix
+        # create sparse matrix consisting of age
         for age, age_data in data_table_virtual.iteritems():
             mean[int(age)] = age_data.loc[metadata_ages == int(age)].mean()
             std[int(age)] = age_data.loc[metadata_ages == int(age)].std()
             count[int(age)] = age_data.loc[metadata_ages == int(age)].count()
             sem[int(age)] = age_data.loc[metadata_ages == int(age)].sem()
             
+        # set 0 for nan_std and nan_sem
         nan_std = [int(age) for age, std_value in list(std.items()) if np.isnan(std_value)]
         for age in nan_std:
             std[int(age)] = 0
@@ -391,13 +457,14 @@ if __name__ == "__main__":
         count = {}
         std = {}
 
-        # sparse matrix
+        # create sparse matrix for original images
         for age, age_data in data_table_orig.iteritems():
             mean[int(age)] = age_data.loc[metadata_ages == int(age)].mean()
             std[int(age)] = age_data.loc[metadata_ages == int(age)].std()
             count[int(age)] = age_data.loc[metadata_ages == int(age)].count()
             sem[int(age)] = age_data.loc[metadata_ages == int(age)].sem()
             
+        # set nan for nan_std and nan_sem
         nan_std = [int(age) for age, std_value in list(std.items()) if np.isnan(std_value)]
         for age in nan_std:
             std[int(age)] = 0
@@ -419,21 +486,25 @@ if __name__ == "__main__":
         # predictions_original_list.append(predictions_original)
         # predictions_virtual_list.append(predictions_virtual)
         
-    p_value_pca_image_for_real_drift_age_by_age = p_value_real_calculate_age_by_age(mean_list_virtual, std_list_virtual, sem_list_virtual, 
+    # collect p_value for original and virtual images
+    p_value_pca_image_for_real_drift_age_by_age = p_value_real_calculate_age_by_age(mean_list_virtual, std_list_virtual, sem_list_virtual,
                                           count_list_virtual, ages_list)
     p_value_orig_image_for_real_drift_age_by_age = p_value_real_calculate_age_by_age(mean_list_orig, std_list_orig, sem_list_orig, 
                                           count_list_orig, ages_list)
     
+    # collect power for virtual and original images
     power_pca_age_by_age, alpha_pca_age_by_age = \
         power_calculate_age_by_age(p_value_pca_image_for_real_drift_age_by_age, ages_list, sig=0.05)
     power_orig_age_by_age, alpha_orig_age_by_age = \
         power_calculate_age_by_age(p_value_orig_image_for_real_drift_age_by_age, ages_list, sig=0.05)
     
+    # set the MSE values to dataframe
     mse_p_array_df = pd.DataFrame(mse_p_array, columns=filenames)
     mse_t_array_df = pd.DataFrame(mse_t_array, columns=filenames)
     mse_corr_array_df = pd.DataFrame(mse_corr_array, columns=filenames)
     psnr_pca_df = pd.DataFrame(psnr_pca_list, columns=filenames)
 
+    # set the power to dataframe
     power_pca_df = pd.DataFrame(power_pca_age_by_age, columns=ages_list, index=ages_list)
     power_orig_df = pd.DataFrame(power_orig_age_by_age, columns=ages_list, index=ages_list)
     
@@ -443,6 +514,7 @@ if __name__ == "__main__":
     # predictions_original_df = pd.DataFrame(predictions_original_list, columns=filenames)
     # predictions_virtual_df = pd.DataFrame(predictions_virtual_list, columns=filenames)
 
+    # save mse and power to dataframe
     mse_p_array_df.to_csv("../data_collection/morph_facenet_mse_p_array_df_optimized.csv")
     mse_t_array_df.to_csv("../data_collection/morph_facenet_mse_t_array_df_optimized.csv")
     mse_corr_array_df.to_csv("../data_collection/morph_facenet_mse_corr_array_df_optimized.csv")

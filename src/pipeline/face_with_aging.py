@@ -84,16 +84,33 @@ if type(args.input_shape) == str:
     print(args.input_shape)
 
 def images_covariance(images_new, no_of_images):
+    """
+    Images covariance
+    @param images_new:
+    @param no_of_images:
+    @return: np.ndarray
+    """
     images_cov = np.cov(images_new.reshape(no_of_images, -1))
     return images_cov
 
 def demean_images(images_bw, no_of_images):
+    """
+    Demean the images
+    @param images_bw:
+    @param no_of_images:
+    @return: np.ndarray
+    """
     images_mean = np.mean(images_bw.reshape(no_of_images, -1), axis=1)
     images_new = (images_bw.reshape(no_of_images, -1) - images_mean.reshape(no_of_images, 1))
 
     return images_new
 
 def collect_images(train_iterator):
+    """
+    Collect the images from iterator
+    @param train_iterator:
+    @return: np.ndarray
+    """
     images_bw = []
     # Get input and output tensors
     for ii in tqdm(range(len(train_iterator))):
@@ -103,17 +120,39 @@ def collect_images(train_iterator):
     return np.vstack(images_bw)
 
 def pca_covariates(images_cov, pca_type='PCA', covariates_beta=1, seed=1000):
+    """
+    Apply PCA on Image Covariates
+    @param images_cov:
+    @param pca_type:
+    @param covariates_beta:
+    @param seed:
+    @return: tuple()
+    """
     pca = KernelPCA(n_components=images_cov.shape[0], kernel='poly') if pca_type == 'KernelPCA' else PCA(n_components=images_cov.shape[0])
     np.random.seed(seed)
     X_pca = pca.fit_transform(images_cov * np.random.normal(0, covariates_beta, size=images_cov.shape) if covariates_beta else images_cov)
     return pca.components_.T if pca_type == 'PCA' else pca.eigenvectors_, pca, X_pca
 
 def isomap_images(images_bw):
+    """
+    Apply Isomap on Images
+    @param images_bw:
+    @return: tuple()
+    """
     isomap = Isomap(n_components=images_bw.shape[0])
     X_transform = isomap.fit(images_bw)
     return isomap.embedding_vectors_, isomap, X_transform
 
 def load_dataset(args, whylogs, image_dim, no_of_samples, colormode):
+    """
+    Load the dataset
+    @param args:
+    @param whylogs:
+    @param image_dim:
+    @param no_of_samples:
+    @param colormode:
+    @return: tuple()
+    """
     dataset = None
     augmentation_generator = None
     if args.dataset == "agedb":
@@ -135,6 +174,13 @@ def load_dataset(args, whylogs, image_dim, no_of_samples, colormode):
     return dataset, augmentation_generator
 
 def get_reduced_metadata(args, dataset, seed=1000):
+  """
+  Get reduced metadata
+  @param args:
+  @param dataset:
+  @param seed:
+  @return: pd.DataFrame()
+  """
   if args.dataset == "fgnet":
     return dataset.metadata
   elif args.dataset == "agedb":
@@ -184,33 +230,45 @@ def get_reduced_metadata(args, dataset, seed=1000):
 
 if __name__ == "__main__":
 
+    # set mlflow tracking URI
     mlflow.set_tracking_uri(args.tracking_uri)
 
+    # choose model
     if args.model == 'FaceNetKeras':
       model_loader = FaceNetKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
     elif args.model == 'FaceRecognitionBaselineKeras':
       model_loader = FaceRecognitionBaselineKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
+
+    # load the model
     model_loader.load_model()
 
+    # load the dataset for PCA experiment
     dataset, augmentation_generator = load_dataset(args, whylogs, (96,96), args.no_of_pca_samples, 'grayscale')
+    # load the dataset for experiment
     experiment_dataset, augmentation_generator = load_dataset(args, whylogs, (args.input_shape[1], args.input_shape[2]), args.no_of_samples, 'rgb')
     
+    # pca args copy
     pca_args = copy(args)
     pca_args.no_of_samples = pca_args.no_of_pca_samples
+    # set metadata to dataset for PCA experiment
     dataset.set_metadata(
         get_reduced_metadata(pca_args, dataset)
     )
     
+    # set metadata to experiment dataset
     experiment_dataset.set_metadata(
         get_reduced_metadata(args, experiment_dataset)
     )
 
+    # collect the images from PCA dataset iterator
     images_bw = collect_images(dataset.iterator)
     if args.noise_error:
         np.random.seed(1000)
         print("Adding error in b/w images of " + str(args.noise_error))
         images_bw += np.random.normal(0, args.noise_error, size=(images_bw.shape))
+    # demean the images
     images_new = demean_images(images_bw, len(images_bw))
+    # Apply PCA on image covariates
     if not os.path.isfile(args.pca_covariates_pkl):
         images_cov = images_covariance(images_new, len(images_new))
         P, pca, X_pca = pca_covariates(images_cov, args.pca_type, args.covariates_beta)
@@ -220,20 +278,28 @@ if __name__ == "__main__":
         pca = pickle.load(open(args.pca_covariates_pkl, "rb"))
 
     print(pca)
+    # create the experiment for dataset and experiment dataset
     experiment = DriftSynthesisByEigenFacesExperiment(args, dataset, experiment_dataset, logger=whylogs, model_loader=model_loader, pca=pca,
                                                       init_offset=0)
 
-    P_pandas = pd.DataFrame(pca.components_.T if args.pca_type == 'PCA' else pca.eigenvectors_, 
+    # Find the eigen vector to apply for finding the images
+    P_pandas = pd.DataFrame(pca.components_.T if args.pca_type == 'PCA' else pca.eigenvectors_,
                             columns=list(range(pca.components_.T.shape[1] if args.pca_type == 'PCA' else pca.eigenvectors_.shape[1])))
+
+    # find the index
     index = experiment.dataset.metadata['age'].reset_index()
 
+    # collect the images from dataset on real experiment
     images = collect_images(experiment_dataset.iterator)
     if args.noise_error:
         np.random.seed(1000)
         print("Adding error of " + str(args.noise_error))
         images += np.random.normal(0, args.noise_error, size=(images.shape))
+    # find the eigen vectors
     eigen_vectors = experiment.eigen_vectors()
+    # find the eigen vector coefficient
     b_vector = experiment.eigen_vector_coefficient(eigen_vectors, images_new)
+    # in image_reconstruction mode
     if args.mode == 'image_reconstruction':
         weights_vector, offset, mean_age, std_age, age = experiment.weights_vector(experiment.dataset.metadata, b_vector)
         
@@ -252,6 +318,7 @@ if __name__ == "__main__":
         
         print("Taken image_reconstruction choice")
         
+    # in image_perturbation mode
     elif args.mode == 'image_perturbation':
         # weights vector dimensions
         weights_vector = experiment.weights_vector_perturbation(experiment.dataset.metadata, b_vector, init_offset=0)
@@ -262,10 +329,12 @@ if __name__ == "__main__":
 
         experiment.dataset.metadata['identity_grouping_distance'] = 0.0
 
+        # apply mahalanobis distances
         distances = experiment.mahalanobis_distance(b_vector)
-        
+        # set mahalanobis distances
         experiment.dataset.metadata['identity_grouping_distance'] = distances
         
+        # choose DISTINCT or DISTRIBUTION mode of execution for finding the hash_samples
         if args.grouping_distance_type == 'DISTINCT':
             experiment.dataset.metadata = experiment.set_hash_sample_by_distinct(experiment.dataset.metadata['identity_grouping_distance'])
         elif args.grouping_distance_type == 'DIST':
@@ -297,18 +366,22 @@ if __name__ == "__main__":
     #                 mlflow.log_figure(fig3, """{0}/hash_sample_{1}/offset_{2}_{3}.png""".format(args.logger_name, str(hash_samples[ii]), str(jj), 'predicted'))
     #                 os.makedirs("""{0}/hash_sample_{1}""".format(args.logger_name, str(hash_samples[ii])), exist_ok=True)
     
+    # get the voting classifier array
     voting_classifier_array = pickle.load(open(args.classifier, 'rb'))
     
-    predictions_classes_array, _, _ = experiment.collect_drift_predictions(images, images_new, 
+    # collect the drift predictions
+    predictions_classes_array, _, _ = experiment.collect_drift_predictions(images, images_new,
                                         weights_vector, offset, b_vector, offset_range, P_pandas, index, 
                                         voting_classifier_array, model_loader, drift_beta=args.drift_beta, covariates_beta=args.covariates_beta)
     
     np.save(open('predictions_classes_array.npy', 'wb'), np.array(predictions_classes_array))
-    predictions_classes = pd.DataFrame(predictions_classes_array, 
+    # set the predictions to a dataframe
+    predictions_classes = pd.DataFrame(predictions_classes_array,
                         columns=['hash_sample', 'offset', 'covariates_beta', 'drift_beta', 'true_identity', 'age', 'filename', 
                         'y_pred', 'proba_pred', 'y_drift', 'proba_drift', 'predicted_age', 'euclidean', 'cosine', 'identity_grouping_distance', 
                         'orig_TP', 'orig_FN', 'virtual_TP', 'virtual_FN', 'stat_TP', 'stat_FP', 'stat_undefined'])
     
+    # save the predictions to CSV file
     predictions_classes.to_csv(args.drift_synthesis_filename)
     
     # predictions_classes = pd.read_csv(args.drift_synthesis_filename)
@@ -367,11 +440,13 @@ if __name__ == "__main__":
         roc_drift=roc_drift
     ))
     
+    # mlflow log metrics
     mlflow.log_metric("recall", recall)
     mlflow.log_metric("precision", precision)
     mlflow.log_metric("f1", f1)
     mlflow.log_metric("accuracy", accuracy)
     
+    # start mlflow experiment
     with mlflow.start_run(experiment_id=args.experiment_id):
         figure = experiment.plot_histogram_of_face_distances()
         mlflow.log_figure(figure, "histogram_of_face_distances.png")

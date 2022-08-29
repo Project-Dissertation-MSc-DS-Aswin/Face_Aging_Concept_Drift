@@ -86,7 +86,15 @@ if type(args.input_shape) == str:
     print(args.input_shape)
     
 def load_dataset(args, whylogs, no_of_samples, colormode, input_shape=(-1,160,160,3)):
-  
+    """
+    Load the dataset
+    @param args:
+    @param whylogs:
+    @param no_of_samples:
+    @param colormode:
+    @param input_shape:
+    @return: tuple()
+    """
     dataset = None
     augmentation_generator = None
     if args.dataset == "agedb":
@@ -110,6 +118,13 @@ def load_dataset(args, whylogs, no_of_samples, colormode, input_shape=(-1,160,16
     return dataset, augmentation_generator
   
 def get_reduced_metadata(args, dataset, seed=1000):
+  """
+  Get reduced metadata
+  @param args:
+  @param dataset:
+  @param seed:
+  @return: pd.DataFrame()
+  """
   if args.dataset == "fgnet":
     return dataset.metadata
   elif args.dataset == "agedb":
@@ -128,6 +143,12 @@ def get_reduced_metadata(args, dataset, seed=1000):
     return dataset.metadata.sample(args.no_of_samples).reset_index()
   
 def collect_data_face_recognition_keras(model_loader, train_iterator):
+  """
+  Collect Images by Face Recognition Keras
+  @param model_loader:
+  @param train_iterator:
+  @return: tuple()
+  """
   res_images = []
   y_classes = []
   files = []
@@ -154,6 +175,12 @@ def collect_data_face_recognition_keras(model_loader, train_iterator):
   return images, res_images, files, ages, labels
 
 def collect_data_facenet_keras(model_loader, train_iterator):
+  """
+  Collect images by FaceNet Keras
+  @param model_loader:
+  @param train_iterator:
+  @return: tuple()
+  """
   res_images = []
   files = []
   ages = []
@@ -172,23 +199,30 @@ def collect_data_facenet_keras(model_loader, train_iterator):
   
 if __name__ == "__main__":
   
+    # set mlflow tracking URI
     mlflow.set_tracking_uri(args.tracking_uri)
     
+    # choose the model
     if args.model == 'FaceNetKeras':
       model_loader = FaceNetKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
     elif args.model == 'FaceRecognitionBaselineKeras':
       model_loader = FaceRecognitionBaselineKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
     
+    # load the model
     model_loader.load_model()
 
+    # load the dataset
     dataset, augmentation_generator = load_dataset(args, whylogs, args.no_of_samples, 'rgb', input_shape=args.input_shape)
     
+    # set the metadata
     dataset.set_metadata(
       get_reduced_metadata(args, dataset)
     )
     
+    # FaceNet with clustering experiment
     experiment = FaceNetWithClusteringExperiment(dataset, whylogs, model_loader)
     
+    # get face iterator using dataset
     if args.dataset == 'agedb':
       face_classification_iterator = dataset.get_iterator_face_classificaton(
         args.colormode, args.batch_size, args.data_dir, augmentation_generator, x_col='filename', y_cols=['age', 'filename', 'name']
@@ -202,13 +236,16 @@ if __name__ == "__main__":
         args.colormode, args.batch_size, args.data_dir, augmentation_generator, x_col='filename', y_cols=['age', 'filename', 'fileno']
       )
     
+    # collect images by choosing the model from wither FaceNetKeras or faceRecognitionBaselineKeras
     if args.model == 'FaceNetKeras':
       images, embeddings, files, ages, labels = collect_data_facenet_keras(model_loader, face_classification_iterator)
     elif args.model == 'FaceRecognitionBaselineKeras':
       images, embeddings, files, ages, labels = collect_data_face_recognition_keras(model_loader, face_classification_iterator)
     
+    # stack the embeddings
     embeddings = np.vstack(embeddings)
     
+    # set the Param Grid
     param_grid = {
       "C": loguniform.rvs(0.1, 100, size=5),
       "gamma": loguniform.rvs(1e-4, 1e-1, size=5),
@@ -224,15 +261,18 @@ if __name__ == "__main__":
       "min_samples_leaf": [1, 5, 10, 20]
     }
     
+    # FaceNet with Classifier Predictor
     algorithm = FaceNetWithClassifierPredictor(metadata=dataset.metadata, model_loader=model_loader)
     
+    # make train test split
     algorithm.make_train_test_split(embeddings, files, ages, labels)
     
-    pickle.dump(algorithm.embeddings_train, open("embeddings_train.pkl", "wb"))
-    pickle.dump(images, open("images.pkl", "wb"))
+    # # dump the embeddings
+    # pickle.dump(algorithm.embeddings_train, open("embeddings_train.pkl", "wb"))
+    # pickle.dump(images, open("images.pkl", "wb"))
     
-    algorithm.embeddings_train = pickle.load(open("embeddings_train.pkl", "rb"))
-    images = pickle.load(open("images.pkl", "rb"))
+    # algorithm.embeddings_train = pickle.load(open("embeddings_train.pkl", "rb"))
+    # images = pickle.load(open("images.pkl", "rb"))
     
     euclidean_embeddings = experiment.euclidean_distances(algorithm.embeddings_train)
     db = experiment.cluster_embeddings(euclidean_embeddings, args.min_samples, args.eps)
@@ -245,6 +285,7 @@ if __name__ == "__main__":
     
     # algorithm.labels_train = db.labels_
     
+    # set the cluster labels and labels with files
     df = pd.DataFrame()
     df['cluster_labels'] = db.labels_
     df['files'] = algorithm.files_train
@@ -267,11 +308,10 @@ if __name__ == "__main__":
     df.loc[labels, 'files'].to_csv("files_clustered_2.csv")
     df.loc[np.logical_not(labels), 'files'].to_csv("files_for_classification_2.csv")
     
-    exit()
-    
     established_embeddings = algorithm.embeddings_train[labels]
-    pickle.dump(established_embeddings, open("established_embeddings.pkl", "wb"))
+    # pickle.dump(established_embeddings, open("established_embeddings.pkl", "wb"))
     
+    # start mlflow experiment
     with mlflow.start_run(experiment_id=args.experiment_id):
       # print(np.unique(db.labels_), np.unique(db.labels_).shape)
       mds = MDS(n_components=2)
