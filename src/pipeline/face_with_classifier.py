@@ -71,7 +71,15 @@ if type(args.input_shape) == str:
     print(args.input_shape)
 
 def load_dataset(args, whylogs, no_of_samples, colormode, input_shape=(-1,160,160,3)):
-  
+    """
+    Load the dataset
+    @param args:
+    @param whylogs:
+    @param image_dim:
+    @param no_of_samples:
+    @param colormode:
+    @return: tuple()
+    """
     dataset = None
     augmentation_generator = None
     if args.dataset == "agedb":
@@ -95,42 +103,55 @@ def load_dataset(args, whylogs, no_of_samples, colormode, input_shape=(-1,160,16
     return dataset, augmentation_generator
   
 def get_reduced_metadata(args, dataset, seed=1000):
-  if args.dataset == "fgnet":
-    return dataset.metadata
-  elif args.dataset == "agedb":
-    np.random.seed(seed)
-    names = dataset.metadata.groupby('name').count()
-    names = names[names['age'] > 40]
-    names = names.index.get_level_values(0)
-    idx = [dataset.metadata['name'] == name for name in names]
-    result_idx = [False]*len(dataset.metadata)
-    for i in idx:
-      result_idx = np.logical_or(result_idx, i)
-      
-    return dataset.metadata.loc[result_idx].reset_index()
-  elif args.dataset == "cacd":
-    np.random.seed(seed)
-    return dataset.metadata.sample(args.no_of_samples).reset_index()
+    """
+    Get reduced metadata
+    @param args:
+    @param dataset:
+    @param seed:
+    @return: pd.DataFrame()
+    """
+    if args.dataset == "fgnet":
+        return dataset.metadata
+    elif args.dataset == "agedb":
+        np.random.seed(seed)
+        names = dataset.metadata.groupby('name').count()
+        names = names[names['age'] > 40]
+        names = names.index.get_level_values(0)
+        idx = [dataset.metadata['name'] == name for name in names]
+        result_idx = [False]*len(dataset.metadata)
+        for i in idx:
+          result_idx = np.logical_or(result_idx, i)
+
+        return dataset.metadata.loc[result_idx].reset_index()
+    elif args.dataset == "cacd":
+        np.random.seed(seed)
+        return dataset.metadata.sample(args.no_of_samples).reset_index()
   
 if __name__ == "__main__":
-  
+    # set mlflow experiment
     mlflow.set_tracking_uri(args.tracking_uri)
     
+    # choose model
     if args.model == 'FaceNetKeras':
       model_loader = FaceNetKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
     elif args.model == 'FaceRecognitionBaselineKeras':
       model_loader = FaceRecognitionBaselineKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
     
+    # load the model
     model_loader.load_model()
 
+    # load the dataset
     dataset, augmentation_generator = load_dataset(args, whylogs, args.no_of_samples, 'rgb', input_shape=args.input_shape)
     
+    # set the metadata for the dataset
     dataset.set_metadata(
         get_reduced_metadata(args, dataset)
     )
     
+    # Experiment started with FaceNet Classifier
     experiment = FaceNetWithClassifierExperiment(dataset, whylogs, model_loader)
     
+    # choose the iterator based on dataset
     if args.dataset == 'agedb':
       face_classification_iterator = dataset.get_iterator_face_classificaton(
         args.colormode, args.batch_size, args.data_dir, augmentation_generator, x_col='filename', y_cols=['age', 'filename', 'name']
@@ -144,9 +165,11 @@ if __name__ == "__main__":
         args.colormode, args.batch_size, args.data_dir, augmentation_generator, x_col='filename', y_cols=['age', 'filename', 'fileno']
       )
     
+    # collect the data from face classification iterator
     embeddings, files, ages, labels = \
       experiment.collect_data(args.data_collection_pkl, face_classification_iterator, model=args.model)
       
+    # param grid
     param_grid = {
       "C": loguniform.rvs(0.1, 100, size=5),
       "gamma": loguniform.rvs(1e-4, 1e-1, size=5),
@@ -162,12 +185,16 @@ if __name__ == "__main__":
       "min_samples_leaf": [1, 5, 10, 20]
     }
     
+    # algorithm created with facenet with classifier predictor
     algorithm = FaceNetWithClassifierPredictor(metadata=dataset.metadata, model_loader=model_loader)
     
+    # algorithm train_test_split
     algorithm.make_train_test_split(embeddings, files, ages, labels)
     
+    # choice of classification or age_drifting
     if args.collect_for == "classification":
       dataframe = algorithm.make_dataframe(algorithm.embeddings_train, algorithm.labels_train, algorithm.ages_train, algorithm.files_train)
+      # create data for training testing
       faces_chunk_array_train, face_classes_array_train = \
         algorithm.make_data(algorithm.labels_train, algorithm.embeddings_train, dataframe)
         
@@ -181,15 +208,19 @@ if __name__ == "__main__":
           param_grid, param_grid2, param_grid3, no_of_classes=3
         )
       
+      # create dataframe using test set
       dataframe = algorithm.make_dataframe(algorithm.embeddings_test, algorithm.labels_test, algorithm.ages_test, algorithm.files_test)
+      # create data for training testing
       faces_chunk_array_train, face_classes_array_train = \
       algorithm.make_data(algorithm.labels_test, algorithm.embeddings_test, dataframe)
       
+    # age_drifting
     elif args.collect_for == "age_drifting":
       dataframe = algorithm.make_dataframe(algorithm.embeddings_train, algorithm.labels_train, algorithm.ages_train, algorithm.files_train)
       faces_chunk_array_train, face_classes_array_train = \
         algorithm.make_data_age_test_younger(algorithm.labels_train, algorithm.embeddings_train, dataframe, age_low=47, age_high=48)
       
+      # set mlflow experiment to run
       with mlflow.start_run(experiment_id=args.experiment_id, run_name='FaceNet with Classifier'):
         score_embedding_test, score_embedding_train, face_classes_count_test, face_classes_count_train, (voting_classifier_array, 
                                                     svm_embedding_array, 
@@ -200,14 +231,18 @@ if __name__ == "__main__":
           param_grid, param_grid2, param_grid3, no_of_classes=3
         )
       
+      # create dataframe from testing set
       dataframe = algorithm.make_dataframe(algorithm.embeddings_test, algorithm.labels_test, algorithm.ages_test, algorithm.files_test)
+      # create chunks of dataset from test set
       faces_chunk_array_train, face_classes_array_train = \
         algorithm.make_data_age_train_younger(algorithm.labels_test, algorithm.embeddings_test, dataframe, age_low=47, age_high=48)
     
+    # Best estimator
     svm_emb_array = [svm_cv.best_estimator_ for svm_cv in svm_embedding_array]
     rf_emb_array = [rf_cv.best_estimator_ for rf_cv in rf_embedding_array]
     h_emb_array = [hist.best_estimator_ for hist in hist_embedding_array]
     
+    # C values
     c_array = [svm_model.C for svm_model in svm_emb_array]
     split = [rf_model.min_samples_split for rf_model in rf_emb_array]
     depth = [hist_model.max_depth for hist_model in h_emb_array]
@@ -216,6 +251,7 @@ if __name__ == "__main__":
     lr = [hist_model.learning_rate for hist_model in h_emb_array]
     criterion = [rf_model.criterion for rf_model in rf_emb_array]
     
+    # start mlflow experiment
     with mlflow.start_run(experiment_id=args.experiment_id, run_name='FaceNet with Classifier'):
       mlflow.log_metric("score_embedding_average_test", np.mean(score_embedding_test))
       mlflow.log_metric("score_embedding_weighted_average_test", np.sum(score_embedding_test * np.array(face_classes_count_test)) / np.sum(face_classes_count_test))
@@ -234,18 +270,23 @@ if __name__ == "__main__":
       except Exception as e:
         print(e.args)
       
+    # chunk datasets from training into testing
     faces_chunk_array_test, face_classes_array_test = faces_chunk_array_train, face_classes_array_train
     
-    accuracy, recall = algorithm.test_and_evaluate(voting_classifier_array, faces_chunk_array_test, face_classes_array_test, dataframe, 
+    # test and evaluate using existing model
+    accuracy, recall = algorithm.test_and_evaluate(voting_classifier_array, faces_chunk_array_test, face_classes_array_test, dataframe,
                                                    algorithm.embeddings_test, collect_for=args.collect_for)
     
     
-    metrics = pd.DataFrame(dict(zip(list(accuracy.keys()) + list(recall.keys()), list(accuracy.values()) + list(recall.values()))), 
+    # metrics saved
+    metrics = pd.DataFrame(dict(zip(list(accuracy.keys()) + list(recall.keys()), list(accuracy.values()) + list(recall.values()))),
                            index=list(accuracy.keys()) + list(recall.keys()))
+    # save the metrics
     metrics.T.to_csv(args.drift_evaluate_metrics)
     
     pickle.dump(voting_classifier_array, open(args.classifier, 'wb'))
 
+    # start mlflow experiment
     with mlflow.start_run(experiment_id=args.experiment_id, run_name='FaceNet with Classifier'):
       mlflow.log_metrics(accuracy)
       mlflow.log_metrics(recall)

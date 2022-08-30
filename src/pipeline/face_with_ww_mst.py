@@ -77,6 +77,11 @@ if type(args.input_shape) == str:
     print(args.input_shape)
     
 def collect_images(train_iterator):
+    """
+    Collect images
+    @param train_iterator:
+    @return: np.ndarray
+    """
     images = []
     # Get input and output tensors
     for ii in tqdm(range(len(train_iterator))):
@@ -86,7 +91,15 @@ def collect_images(train_iterator):
     return np.vstack(images)
 
 def load_dataset(args, whylogs, no_of_samples, colormode, input_shape=(-1,160,160,3)):
-  
+    """
+    Load the dataset
+    @param args:
+    @param whylogs:
+    @param no_of_samples:
+    @param colormode:
+    @param input_shape:
+    @return: tuple()
+    """
     dataset = None
     augmentation_generator = None
     if args.dataset == "agedb":
@@ -110,6 +123,13 @@ def load_dataset(args, whylogs, no_of_samples, colormode, input_shape=(-1,160,16
     return dataset, augmentation_generator
 
 def get_reduced_metadata(args, dataset, seed=1000):
+  """
+  Get reduced metadata
+  @param args:
+  @param dataset:
+  @param seed:
+  @return: pd.DataFrame()
+  """
   if args.dataset == "fgnet":
     return dataset.metadata
   elif args.dataset == "agedb":
@@ -127,36 +147,46 @@ def get_reduced_metadata(args, dataset, seed=1000):
 
 if __name__ == "__main__":
     
+    # set mlflow tracking URI
     mlflow.set_tracking_uri(args.tracking_uri)
 
+    # choose the model
     if args.model == 'FaceNetKeras':
       model_loader = FaceNetKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
     elif args.model == 'FaceRecognitionBaselineKeras':
       model_loader = FaceRecognitionBaselineKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
     
+    # load the model
     model_loader.load_model()
 
+    # load the dataset
     dataset, augmentation_generator = load_dataset(args, whylogs, args.no_of_samples, 'rgb', input_shape=args.input_shape)
     
+    # load the experiment dataset
     experiment_dataset, augmentation_generator = load_dataset(args, whylogs, args.no_of_samples, 'rgb', input_shape=args.input_shape)
     
+    # set metadata for dataset
     dataset.set_metadata(
         get_reduced_metadata(args, dataset)
     )
     
+    # set metadata for experiment dataset
     experiment_dataset.set_metadata(
         get_reduced_metadata(args, dataset)
     )
     
+    # collect images
     images = collect_images(dataset.iterator)
     
     pickle.dump(images, open("images.pkl", "wb"))
     
+    # inference on models using FaceNetKeras and FaceRecognitionBaselineKeras
     if args.model == 'FaceNetKeras':
       embeddings = model_loader.infer(l2_normalize(prewhiten(images.reshape(-1,args.input_shape[1], args.input_shape[2],3))))
     elif args.model == 'FaceRecognitionBaselineKeras':
       embeddings = model_loader.infer((images.reshape(-1,args.input_shape[1], args.input_shape[2],3))/255.)
       
+    # iterator for dataset
     if args.dataset == 'agedb':
       face_classification_iterator = experiment_dataset.get_iterator_face_classificaton(
         args.colormode, args.batch_size, args.data_dir, augmentation_generator, x_col='filename', y_cols=['age', 'filename', 'name']
@@ -170,13 +200,16 @@ if __name__ == "__main__":
         args.colormode, args.batch_size, args.data_dir, augmentation_generator, x_col='filename', y_cols=['age', 'filename', 'fileno']
       )
     
+    # collect embeddings from model
     if args.model == 'FaceNetKeras':
       embeddings_all, files, ages, labels = collect_data_facenet_keras(model_loader, face_classification_iterator)
     elif args.model == 'FaceRecognitionBaselineKeras':
       embeddings_all, files, ages, labels = collect_data_face_recognition_keras(model_loader, face_classification_iterator)
       
+    # euclidean distances
     euclidean_embeddings = euclidean_distances(np.vstack(embeddings_all), embeddings)
     
+    # dataframe
     df = pd.DataFrame(euclidean_embeddings, index=experiment_dataset.metadata.filename.values, columns=dataset.metadata.filename.values)
     
     # # building sparse matrix
@@ -191,6 +224,7 @@ if __name__ == "__main__":
     from scipy.sparse import csr_matrix
     from scipy.sparse.csgraph import minimum_spanning_tree
 
+    # minimum spanning tree
     result = minimum_spanning_tree(csr_matrix(df.values)).toarray()
     
     # # count number of trees

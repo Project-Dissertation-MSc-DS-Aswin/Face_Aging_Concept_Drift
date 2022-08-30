@@ -1,15 +1,19 @@
 import socketio
 import eventlet
+import sys
+from gevent import pywsgi
+from geventwebsocket.handler import WebSocketHandler
 
 # call FastAPI app
-async_mode = 'eventlet'
+async_mode = 'gevent'
 sio = socketio.Server(cors_allowed_origins='*', logger=True, async_mode=async_mode, always_connect=True)
 app = socketio.WSGIApp(sio)
-eventlet.wsgi.server(eventlet.listen(('', 8000)), app)
+pywsgi.WSGIServer(('', 8041), app,
+                  handler_class=WebSocketHandler, log=sys.stdout).serve_forever()
 
 @sio.event
 def connect(sid, environ):
-  print(sid, 'connected')
+  print(sid, 'connect')
 
 @sio.event
 def disconnect(sid):

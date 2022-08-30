@@ -76,6 +76,11 @@ if type(args.input_shape) == str:
     print(args.input_shape)
     
 def collect_images(train_iterator):
+    """
+    Collect the images from an existing training iterator
+    @param train_iterator:
+    @return:
+    """
     images = []
     # Get input and output tensors
     for ii in tqdm(range(len(train_iterator))):
@@ -85,7 +90,15 @@ def collect_images(train_iterator):
     return np.vstack(images)
 
 def load_dataset(args, whylogs, no_of_samples, colormode, input_shape=(-1,160,160,3)):
-  
+    """
+    Load the dataset
+    @param args:
+    @param whylogs:
+    @param no_of_samples:
+    @param colormode:
+    @param input_shape:
+    @return: tuple()
+    """
     dataset = None
     augmentation_generator = None
     if args.dataset == "agedb":
@@ -109,6 +122,13 @@ def load_dataset(args, whylogs, no_of_samples, colormode, input_shape=(-1,160,16
     return dataset, augmentation_generator
   
 def get_reduced_metadata(args, dataset, seed=1000):
+  """
+  Get reduced metadata
+  @param args:
+  @param dataset:
+  @param seed:
+  @return: pd.DataFrame()
+  """
   if args.dataset == "fgnet":
     return dataset.metadata
   elif args.dataset == "agedb":
@@ -132,9 +152,19 @@ def get_reduced_metadata(args, dataset, seed=1000):
     return dataset.metadata.sample(args.no_of_samples).reset_index()
 
 def covariance(embeddings):
+    """
+    Covariance of embeddings
+    @param embeddings:
+    @return:
+    """
     return np.cov(embeddings)
 
 def t_squared_distribution(embeddings):
+    """
+    T-squared distribution
+    @param embeddings:
+    @return: Mahalanobis distances
+    """
     mean = embeddings.mean(axis=0)
     cov = covariance(embeddings)
     
@@ -142,28 +172,36 @@ def t_squared_distribution(embeddings):
 
 if __name__ == "__main__":
     
+    # set mlflow experiment
     mlflow.set_tracking_uri(args.tracking_uri)
 
+    # choose model
     if args.model == 'FaceNetKeras':
         model_loader = FaceNetKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
     elif args.model == 'FaceRecognitionBaselineKeras':
         model_loader = FaceRecognitionBaselineKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
     
+    # load the model
     model_loader.load_model()
 
+    # load the dataset
     dataset, augmentation_generator = load_dataset(args, whylogs, args.no_of_samples, 'rgb', input_shape=args.input_shape)
-    
+
+    # set the dataset metadata
     dataset.set_metadata(
         get_reduced_metadata(args, dataset)
     )
     
+    # collect the images
     images = collect_images(dataset.iterator)
     
+    # collect the images based on the model
     if args.model == 'FaceNetKeras':
         embeddings = model_loader.infer(l2_normalize(prewhiten(images.reshape(-1,args.input_shape[1], args.input_shape[2],3))))
     elif args.model == 'FaceRecognitionBaselineKeras':
         embeddings = model_loader.infer((images.reshape(-1,args.input_shape[1], args.input_shape[2],3))/255.)
     
+    # embeddings mean
     mean = embeddings.mean(axis=0)
     cov = covariance(embeddings.T)
     cov_inverse = np.linalg.inv(cov)
@@ -176,6 +214,7 @@ if __name__ == "__main__":
     def t_squared_beta(embedding, alpha=args.alpha):
         return (embedding.shape[0] - 1)**2 / embedding.shape[0] * np.quantile(scipy.stats.beta.pdf(embedding, 1/2, (embedding.shape[0] - 1 - 1)/2), q=1-alpha)
     
+    # dataframe for T2 statistics
     df = pd.DataFrame(
         np.concatenate([np.array(list(map(mahalanobis_squared_observation, embeddings))).reshape(-1,1), np.array(list(map(t_squared_beta, embeddings))).reshape(-1,1)], axis=1), 
         columns=['observation', 'ucl_alpha_0.01']

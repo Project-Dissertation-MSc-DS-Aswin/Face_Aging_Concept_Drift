@@ -479,7 +479,7 @@ class DriftSynthesisByEigenFacesExperiment:
                             proba_orig = pred_proba_original[found][np.where(classes_orig[found] == pred_orig)[0]]
                         else:
                             for ij in classes_orig.keys():
-                                if self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'identity'].iloc[choice] in classes_orig[ij].tolist():
+                                if self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'name'].iloc[choice] in classes_orig[ij].tolist():
                                     found = ij
                             pred_orig = pred_original[found]
                             proba_orig = pred_proba_original[found][np.where(classes_orig[found] == pred_orig)[0]]
@@ -488,7 +488,7 @@ class DriftSynthesisByEigenFacesExperiment:
                         
                     data.append([i, offset, covariates_beta, beta,
                         # identity
-                        self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'identity'].iloc[choice], 
+                        self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'name'].iloc[choice], 
                         # age
                         self.dataset.metadata.loc[self.dataset.metadata['hash_sample'] == i, 'age'].iloc[choice], 
                         # filename

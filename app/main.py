@@ -45,7 +45,7 @@ def message(data):
 def disconnect():
     print('disconnected from server')
     
-sio.connect('http://localhost:8000/', wait_timeout = 10)
+sio.connect('http://localhost:8041/', wait_timeout = 10)
 
 app = FastAPI()
 
@@ -126,7 +126,9 @@ def get_image_url(num: int):
 
 class Item(BaseModel):
   filenames: List[str] = []
-  
+
+ml_model_classification = pickle.load(open("../src/models/agedb_voting_classifier_age.pkl", 'rb'))
+
 @app.post("/backend/drift/{seed}/{num}/{pipeline}/")
 def get_drift_predictions(seed: int, num: int, pipeline: str, item: Item):
   
@@ -143,8 +145,6 @@ def get_drift_predictions(seed: int, num: int, pipeline: str, item: Item):
   args.model = "FaceNetKeras"
   
   sio.emit('status', {'percentage': 0, 'display': '<em class="progressbar-display">&nbsp;</em>'})
-  
-  ml_model_classification = pickle.load(open(args.classifier, 'rb'))
   
   sio.emit('status', {'percentage': 1, 'display': '<em class="progressbar-display">&nbsp;</em>'})
   

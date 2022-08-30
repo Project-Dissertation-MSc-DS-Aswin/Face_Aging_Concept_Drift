@@ -5,17 +5,17 @@ sys.path.append("../")
 from copy import copy
 import yaml
 
-constants = yaml.load(open("../constants.yml", 'r').read(), yaml.Loader)
+constants = yaml.load(open("../src/constants.yml", 'r').read(), yaml.Loader)
 
-  class Args:
+class Args:
 
-    def __new__(self, attrs):
+  def __new__(self, attrs):
 
-      return type('ArgsDerived', (Args, ), attrs)
+    return type('ArgsDerived', (Args, ), attrs)
 
-  class Constants:
+class Constants:
 
-    def __new__(self, attrs=None):
+  def __new__(self, attrs=None):
 
-      return type('ConstantsDerived', (Constants, ), constants)
+    return type('ConstantsDerived', (Constants, ), constants)
 

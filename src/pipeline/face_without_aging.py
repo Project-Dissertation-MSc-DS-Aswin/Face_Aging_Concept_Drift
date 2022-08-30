@@ -86,6 +86,12 @@ if type(args.input_shape) == str:
     print(args.input_shape)
 
 def get_reduced_metadata(args, dataset):
+  """
+  Get reduced metadata
+  @param args:
+  @param dataset:
+  @return: pd.DataFrame()
+  """
   if args.dataset == "fgnet":
     return dataset.metadata
   elif args.dataset == "agedb":
@@ -138,6 +144,13 @@ def get_reduced_metadata(args, dataset):
       return dataset.metadata.loc[result_idx].sort_values(by=['name', 'age'])
 
 def load_dataset(args, whylogs, input_shape=(-1,160,160,3)):
+  """
+  Load the dataset
+  @param args:
+  @param whylogs:
+  @param input_shape:
+  @return: tuple()
+  """
   dataset = None
   if args.dataset == "agedb":
     augmentation_generator = get_augmented_datasets()
@@ -159,30 +172,36 @@ def load_dataset(args, whylogs, input_shape=(-1,160,160,3)):
 
 if __name__ == "__main__":
 
+  # choose the model
   if args.model == 'FaceNetKeras':
     model_loader = FaceNetKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
   elif args.model == 'FaceRecognitionBaselineKeras':
     model_loader = FaceRecognitionBaselineKerasModelLoader(whylogs, args.model_path, input_shape=args.input_shape)
   
+  # load the model
   model_loader.load_model()
   
   # load the dataset and set the metadata
   dataset, augmentation_generator = load_dataset(args, whylogs, input_shape=args.input_shape)
+  # set the matadata
   dataset.set_metadata(
     get_reduced_metadata(args, dataset)
   )
   
   args.no_of_samples = len(dataset.metadata)
   
+  # iterator from face classification
   iterator = dataset.get_iterator_face_classificaton(args.colormode, args.batch_size, args.data_dir, augmentation_generator, x_col='filename', y_cols=['name'])
   
   # setup experiment
   experiment = FaceNetWithoutAgingExperiment(dataset, logger=whylogs, model_loader=model_loader)
   
   model_loader_detect = None
+  # model face detection using YuNet
   if args.model_detect == 'YuNet_onnx':
     model_loader_detect = YuNetModelLoader(whylogs, args.model_path_detect, input_shape=[1,args.input_shape[1],args.input_shape[2],args.input_shape[3]], conf_threshold=args.conf_threshold, nms_threshold=args.nms_threshold, backend=args.backend, target=args.target, top_k=args.top_k)
   
+  # detector experiment to perform face classification by images
   detectorExperiment = FaceClassificationByImages(dataset, whylogs, model_loader_detect)
   
   """
@@ -193,6 +212,7 @@ if __name__ == "__main__":
   # if os.path.isfile(args.data_collection_pkl):
   #   embeddings = tf.concat(pickle.load(open("../data_collection/detection_agedb_inferences_baseline_cvae_14k.pkl", "rb")), axis=0)
 
+  # face distances
   result_euclidean_distances, result_cosine_similarities = experiment.calculate_face_distance(embeddings.numpy())
   # result_euclidean_distances, result_cosine_similarities = experiment.calculate_face_mahalanonis_distance(embeddings.numpy())
 
@@ -202,8 +222,10 @@ if __name__ == "__main__":
   #   with open(data_collection_pkl, 'wb') as data_collection_file:
   #     pickle.dump(embeddings, data_collection_file)
       
+  # start mlflow experiment
   with mlflow.start_run(experiment_id=args.experiment_id):
     
+    # counter labels from dataset
     if args.dataset == 'agedb':
       counter_labels = Counter(dataset.metadata['name'])
     elif args.dataset == 'cacd':
@@ -213,12 +235,14 @@ if __name__ == "__main__":
       
     name_first = list(counter_labels.keys())[0]
 
+    # euclidean distances
     array = np.append(result_euclidean_distances[0, :counter_labels[name_first]].flatten(), \
       result_euclidean_distances[0, counter_labels[name_first]:].flatten())
     y_labels = [1]*result_euclidean_distances[0, :counter_labels[name_first]].flatten().shape[0] + \
       [0]*result_euclidean_distances[0, counter_labels[name_first]:].flatten().shape[0]
 
     count = counter_labels[name_first]
+    # computing euclidean distances
     for ii, (identity, label) in tqdm(enumerate(counter_labels.items())):
         if ii == 0:
             continue
@@ -230,10 +254,12 @@ if __name__ == "__main__":
         y_labels += [0]*result_euclidean_distances[ii, :count].flatten().shape[0]
         count += counter_labels[identity]
         
+    # cosine distances
     array_cos = np.append(result_cosine_similarities[0, :counter_labels[name_first]].flatten(), \
       result_cosine_similarities[0, counter_labels[name_first]:].flatten())
 
     count = counter_labels[name_first]
+    # computing cosine distances
     for ii, (identity, label) in tqdm(enumerate(counter_labels.items())):
         if ii == 0:
             continue
@@ -242,9 +268,11 @@ if __name__ == "__main__":
         array_cos = np.append(array_cos, result_cosine_similarities[ii, :count].flatten())
         count += counter_labels[identity]
 
+    # full distances
     array_full = np.concatenate([array.reshape(-1, 1), array_cos.reshape(-1, 1)], axis=1)
 
     fig = plt.figure(figsize=(12, 8))
+    # scatter plot of similar and non-similar images
     plt.scatter(array_full[np.array(y_labels) == 0, 0], array_full[np.array(y_labels) == 0, 1], color='blue',
                 label='Non-similar Images')
     plt.scatter(array_full[np.array(y_labels) == 1, 0], array_full[np.array(y_labels) == 1, 1], color='orange',
@@ -255,6 +283,7 @@ if __name__ == "__main__":
     mlflow.log_figure(fig, "scatter_plot_baseline_euclidean.png")
     
     fig = plt.figure(figsize=(12, 8))
+    # histogram plot of euclidean distances
     plt.hist(array_full[np.array(y_labels) == 0, 0], label='Non-similar Images', color='red')
     plt.hist(array_full[np.array(y_labels) == 1, 0], label='Similar Images', color='blue')
     plt.legend()
