@@ -199,7 +199,7 @@ if __name__ == "__main__":
     if args.model == 'FaceNetKeras':
         embeddings = model_loader.infer(l2_normalize(prewhiten(images.reshape(-1,args.input_shape[1], args.input_shape[2],3))))
     elif args.model == 'FaceRecognitionBaselineKeras':
-        embeddings = model_loader.infer((images.reshape(-1,args.input_shape[1], args.input_shape[2],3))/255.)
+        embeddings = model_loader.infer(([images.reshape(-1,args.input_shape[1], args.input_shape[2],3))/255., ])
     
     # embeddings mean
     mean = embeddings.mean(axis=0)

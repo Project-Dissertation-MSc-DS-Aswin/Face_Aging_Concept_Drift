@@ -20,6 +20,7 @@ import logging
 import sys
 import re
 import tensorflow as tf
+from sklearn.preprocessing import StandardScaler
 import imageio
 
 """
@@ -45,6 +46,9 @@ args.classifier = os.environ.get('classifier', constants.AGEDB_FACE_CLASSIFIER)
 args.collect_for = os.environ.get('collect_for', 'age_drifting')
 args.drift_evaluate_metrics = os.environ.get('drift_evaluate_metrics', constants.AGEDB_DRIFT_EVALUATE_METRICS)
 args.experiment_id = os.environ.get("experiment_id", 1)
+args.log_file_younger = os.environ.get("log_file_younger", "test_data_predictions_younger.csv")
+args.log_file_older = os.environ.get("log_file_older", "test_data_predictions_older.csv")
+args.log_file = os.environ.get("log_file", "test_data_predictions.csv")
 args.input_shape = os.environ.get('input_shape', (-1,160,160,3))
 
 parameters = list(
@@ -193,9 +197,12 @@ if __name__ == "__main__":
     
     # choice of classification or age_drifting
     if args.collect_for == "classification":
-      dataframe = algorithm.make_dataframe(algorithm.embeddings_train, algorithm.labels_train, algorithm.ages_train, algorithm.files_train)
       # create data for training testing
-      faces_chunk_array_train, face_classes_array_train = \
+      scaler = StandardScaler()
+      algorithm.embeddings_train = scaler.fit_transform(algorithm.embeddings_train)
+      algorithm.embeddings_test = scaler.transform(algorithm.embeddings_test)
+      dataframe = algorithm.make_dataframe(algorithm.embeddings_train, algorithm.labels_train, algorithm.ages_train, algorithm.files_train)
+      faces_chunk_array_train, face_classes_array_train, faces_chunk_array_test, face_classes_array_test = \
         algorithm.make_data(algorithm.labels_train, algorithm.embeddings_train, dataframe)
         
       with mlflow.start_run(experiment_id=args.experiment_id, run_name='FaceNet with Classifier'):
@@ -204,8 +211,8 @@ if __name__ == "__main__":
                                                     rf_embedding_array, 
                                                     hist_embedding_array, 
                                                     knn_embeding_array) = algorithm.train_and_evaluate(
-          faces_chunk_array_train, face_classes_array_train, 
-          param_grid, param_grid2, param_grid3, no_of_classes=3
+          faces_chunk_array_train, face_classes_array_train, faces_chunk_array_test, face_classes_array_test, 
+          param_grid, param_grid2, param_grid3, no_of_classes=3, original_df=pd.DataFrame(columns=['test_labels', 'test_predictions']), log_file=args.log_file
         )
       
       # create dataframe using test set
@@ -216,10 +223,14 @@ if __name__ == "__main__":
       
     # age_drifting
     elif args.collect_for == "age_drifting":
+      scaler = StandardScaler()
+      algorithm.embeddings_train = scaler.fit_transform(algorithm.embeddings_train)
+      algorithm.embeddings_test = scaler.transform(algorithm.embeddings_test)
       dataframe = algorithm.make_dataframe(algorithm.embeddings_train, algorithm.labels_train, algorithm.ages_train, algorithm.files_train)
-      faces_chunk_array_train, face_classes_array_train = \
-        algorithm.make_data_age_test_younger(algorithm.labels_train, algorithm.embeddings_train, dataframe, age_low=47, age_high=48)
-      
+      # train younger and test older scenario
+      faces_chunk_array_train, face_classes_array_train, faces_chunk_array_test, face_classes_array_test = \
+        algorithm.make_data_age_train_younger(algorithm.labels_train, algorithm.embeddings_train, dataframe, age_low=47, age_high=48)
+        
       # set mlflow experiment to run
       with mlflow.start_run(experiment_id=args.experiment_id, run_name='FaceNet with Classifier'):
         score_embedding_test, score_embedding_train, face_classes_count_test, face_classes_count_train, (voting_classifier_array, 
@@ -227,15 +238,15 @@ if __name__ == "__main__":
                                                     rf_embedding_array, 
                                                     hist_embedding_array, 
                                                     knn_embeding_array) = algorithm.train_and_evaluate(
-          faces_chunk_array_train, face_classes_array_train, 
+          faces_chunk_array_train, face_classes_array_train, faces_chunk_array_test, face_classes_array_test, 
           param_grid, param_grid2, param_grid3, no_of_classes=3
         )
       
       # create dataframe from testing set
       dataframe = algorithm.make_dataframe(algorithm.embeddings_test, algorithm.labels_test, algorithm.ages_test, algorithm.files_test)
       # create chunks of dataset from test set
-      faces_chunk_array_train, face_classes_array_train = \
-        algorithm.make_data_age_train_younger(algorithm.labels_test, algorithm.embeddings_test, dataframe, age_low=47, age_high=48)
+      faces_chunk_array_train, face_classes_array_train, faces_chunk_array_test, face_classes_array_test = \
+        algorithm.make_data_age_test_younger(algorithm.labels_test, algorithm.embeddings_test, dataframe, age_low=47, age_high=48)
     
     # Best estimator
     svm_emb_array = [svm_cv.best_estimator_ for svm_cv in svm_embedding_array]

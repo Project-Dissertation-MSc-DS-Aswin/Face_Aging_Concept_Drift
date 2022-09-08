@@ -10,7 +10,7 @@ from sklearn.decomposition import PCA
 import whylogs
 import mlflow
 from datasets import CACD2000Dataset, FGNETDataset, AgeDBDataset
-from experiment.facenet_with_classifier import collect_data_face_recognition_keras, collect_data_facenet_keras
+from experiment.face_with_classifier import collect_data_face_recognition_keras, collect_data_facenet_keras
 from experiment.model_loader import FaceNetKerasModelLoader, FaceRecognitionBaselineKerasModelLoader
 from experiment.model_loader import get_augmented_datasets, preprocess_data_facenet_without_aging
 from preprocessing.facenet import l2_normalize, prewhiten
@@ -24,6 +24,7 @@ import sys
 import re
 import tensorflow as tf
 import imageio
+import mistree as mist
 
 """
 Initializing constants from YAML file
@@ -83,12 +84,14 @@ def collect_images(train_iterator):
     @return: np.ndarray
     """
     images = []
+    labels = []
     # Get input and output tensors
     for ii in tqdm(range(len(train_iterator))):
         (X, y) = train_iterator[ii]
         images.append(X)
+        labels.append(y)
 
-    return np.vstack(images)
+    return np.vstack(images), labels
 
 def load_dataset(args, whylogs, no_of_samples, colormode, input_shape=(-1,160,160,3)):
     """
@@ -159,33 +162,14 @@ if __name__ == "__main__":
     # load the model
     model_loader.load_model()
 
-    # load the dataset
-    dataset, augmentation_generator = load_dataset(args, whylogs, args.no_of_samples, 'rgb', input_shape=args.input_shape)
-    
     # load the experiment dataset
     experiment_dataset, augmentation_generator = load_dataset(args, whylogs, args.no_of_samples, 'rgb', input_shape=args.input_shape)
     
-    # set metadata for dataset
-    dataset.set_metadata(
-        get_reduced_metadata(args, dataset)
-    )
-    
     # set metadata for experiment dataset
     experiment_dataset.set_metadata(
-        get_reduced_metadata(args, dataset)
+        get_reduced_metadata(args, experiment_dataset)
     )
     
-    # collect images
-    images = collect_images(dataset.iterator)
-    
-    pickle.dump(images, open("images.pkl", "wb"))
-    
-    # inference on models using FaceNetKeras and FaceRecognitionBaselineKeras
-    if args.model == 'FaceNetKeras':
-      embeddings = model_loader.infer(l2_normalize(prewhiten(images.reshape(-1,args.input_shape[1], args.input_shape[2],3))))
-    elif args.model == 'FaceRecognitionBaselineKeras':
-      embeddings = model_loader.infer((images.reshape(-1,args.input_shape[1], args.input_shape[2],3))/255.)
-      
     # iterator for dataset
     if args.dataset == 'agedb':
       face_classification_iterator = experiment_dataset.get_iterator_face_classificaton(
@@ -207,25 +191,83 @@ if __name__ == "__main__":
       embeddings_all, files, ages, labels = collect_data_face_recognition_keras(model_loader, face_classification_iterator)
       
     # euclidean distances
-    euclidean_embeddings = euclidean_distances(np.vstack(embeddings_all), embeddings)
+    euclidean_embeddings = euclidean_distances(np.vstack(embeddings_all))
     
     # dataframe
-    df = pd.DataFrame(euclidean_embeddings, index=experiment_dataset.metadata.filename.values, columns=dataset.metadata.filename.values)
-    
-    # # building sparse matrix
-    for idx, row in df.iterrows():
-      cols = [i for i in range(dataset.metadata.age.values.shape[0]) if dataset.metadata.age.values[i] != experiment_dataset.metadata.age.values[idx]]
-      df.loc[idx, cols] = 0
-    
-    df.to_csv("file_euclidean.csv")
-    
-    # df = pd.read_csv("file_euclidean.csv", index_col=0)
+    euclidean_data = pd.DataFrame(euclidean_embeddings, index=experiment_dataset.metadata.filename.values, columns=experiment_dataset.metadata.filename.values)
     
     from scipy.sparse import csr_matrix
     from scipy.sparse.csgraph import minimum_spanning_tree
 
-    # minimum spanning tree
-    result = minimum_spanning_tree(csr_matrix(df.values)).toarray()
+    lesser_age_group = experiment_dataset.metadata.groupby('name')['age'].mean().sort_values()[experiment_dataset.metadata.groupby('name')['age'].mean().sort_values() <= 38.50671030080361].index
     
-    # # count number of trees
-    pd.DataFrame(result, index=experiment_dataset.metadata.filename.values, columns=dataset.metadata.filename.values).to_csv("file2_euclidean.csv")
+    older_age_group = experiment_dataset.metadata.groupby('name')['age'].mean().sort_values()[experiment_dataset.metadata.groupby('name')['age'].mean().sort_values() > 38.50671030080361].index
+
+    euclidean_data['filename'] = euclidean_data.index.get_level_values(0)
+    euclidean_data = euclidean_data.drop(columns=['filename']).groupby('name').mean().T
+    euclidean_data['name'] = euclidean_data['filename'].apply(lambda x: "".join(list(map(lambda y: str(y) if (ord(y[0]) >= 65 and ord(y[0]) <= 127) else "", x.split("_")))))
+    euclidean_data = euclidean_data.drop(columns=['filename']).groupby('name').mean().T
+    
+    euclidean_data = euclidean_data.loc[lesser_age_group.values.tolist() + older_age_group.values.tolist(), lesser_age_group.values.tolist() + older_age_group.values.tolist()]
+
+    labels = np.array([0]*len(lesser_age_group) + [1]*len(older_age_group))
+
+    result = minimum_spanning_tree(csr_matrix(euclidean_data)).toarray()
+    idx = np.where([(result != 0)])
+
+    # start row-wise
+    indices_array = idx[1], idx[2]
+    # values truncated
+    values_array = result[idx[1], idx[2]]
+
+    import networkx as nx
+
+    G = nx.Graph()
+    V = set(list(range(len(euclidean_data))))
+    E = list(zip(indices_array[0], indices_array[1], values_array))
+    G.add_nodes_from(V)
+    G.add_weighted_edges_from(E)
+
+    from tqdm import tqdm
+
+    paths = []
+    for i in tqdm(range(len(idx[1]))):
+      for j in range(i, len(idx[1])):
+        # edge distances
+        try:
+          path = nx.dijkstra_path(G,source=idx[1][i],target=idx[1][j], weight='weight')
+          paths.append(path)
+        except Exception as e:
+          print(e)
+
+    new_paths = [p for p in paths if len(p) > 2]
+
+    new_df = pd.DataFrame(np.zeros((len(new_paths), 3)), columns=['key', 'sum_distance', 'avg_distance'], index=list(range(len(new_paths))))
+    for ii, tree in enumerate(new_paths):
+      new_df.loc[ii, 'key'] = str(tree)
+      new_df.loc[ii, 'sum_distance'] = euclidean_data.iloc[list(tree)].values[euclidean_data.iloc[list(tree)].values!=0].sum()
+      new_df.loc[ii, 'avg_distance'] = euclidean_data.iloc[list(tree)].values[euclidean_data.iloc[list(tree)].values!=0].sum() / len(tree)
+      new_df.loc[ii, 'age_group'] = str([labels[t] for t in list(tree)])
+      new_df.loc[ii, 'higher_age_count'] = sum([labels[t] for t in list(tree)])
+      new_df.loc[ii, 'lesser_age_count'] = len([labels[t] for t in list(tree)]) - sum([labels[t] for t in list(tree)])
+      
+    from scipy.stats import norm
+
+    R = len(new_df)
+    # m = drift_file.loc[drift_file['orig_TP'] == 0].shape[0]
+    m = new_df['higher_age_count'].sum()
+    # n = drift_file.loc[drift_file['orig_TP'] == 1].shape[0]
+    n = new_df['lesser_age_count'].sum()
+    N = m + n
+
+    mu = 2*m*n / N + 1
+    sigma = (2*m*n*(2*m*n - N) / ((N**2)*(N-1)))**0.5
+
+    W = (R - mu) / sigma
+    print(W)
+
+    z = (np.abs(R - mu) - 0.5) / sigma
+    p_val = norm.sf(z)
+
+    print('Z-score: ', z)
+    print('p-value: ', p_val)
