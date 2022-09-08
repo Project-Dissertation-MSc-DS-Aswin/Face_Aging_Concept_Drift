@@ -1,0 +1,510 @@
+,hash_sample,offset,covariates_beta,drift_beta,true_identity,age,filename,y_pred,y_drift,predicted_age,euclidean,cosine,identity_grouping_distance,orig_TP,orig_FN,virtual_TP,virtual_FN,stat_TP,stat_FP,stat_undefined
+0,1,0.01,0,0.5,PaulAnka,60,102_PaulAnka_60_m.jpg,PaulAnka,PaulAnka,6.47,9.989723206,0.611876428,-42634.44051,1,0,1,0,1,0,0
+1,2,0.01,0,0.5,LuiseRainer,26,10638_LuiseRainer_26_f.jpg,"AngelaLansbury AngelaLansbury MickeyRooney MickeyRooney
+ RichardCrenna MickeyRooney RichardCrenna MickeyRooney
+ MickeyRooney RichardCrenna AngelaLansbury MickeyRooney
+ MickeyRooney MickeyRooney RichardCrenna AngelaLansbury
+ AngelaLansbury AngelaLansbury RichardCrenna]","ArnoldSchwarzenegger GiulianoGemma ArnoldSchwarzenegger
+ GiulianoGemma ArnoldSchwarzenegger GiulianoGemma HelenHayes
+ GiulianoGemma ArnoldSchwarzenegger HelenHayes HelenHayes
+ GiulianoGemma ArnoldSchwarzenegger HelenHayes
+ ArnoldSchwarzenegger GiulianoGemma ArnoldSchwarzenegger
+ GiulianoGemma HelenHayes]",-10.24,10.22231483,0.179381266,5942.371164,0,1,0,1,0,0,1
+2,3,0.01,0,0.5,LuiseRainer,27,10645_LuiseRainer_27_f.jpg,"EdwardGRobinson FredMacMurray EdwardGRobinson FredMacMurray
+ EdwardGRobinson FredMacMurray FredMacMurray FredMacMurray
+ EdwardGRobinson KevinBacon KevinBacon FredMacMurray
+ EdwardGRobinson KevinBacon EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson KevinBacon KevinBacon]","EdwardGRobinson FredMacMurray EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson FredMacMurray FredMacMurray FredMacMurray
+ EdwardGRobinson KevinBacon EdwardGRobinson FredMacMurray
+ EdwardGRobinson KevinBacon EdwardGRobinson FredMacMurray
+ EdwardGRobinson EdwardGRobinson KevinBacon]",-7.04,4.980052471,0.66846174,-3210.578365,0,1,0,1,0,0,1
+3,4,0.01,0,0.5,LuiseRainer,28,10666_LuiseRainer_28_f.jpg,"AngelaLansbury AngelaLansbury MickeyRooney MickeyRooney
+ AngelaLansbury MickeyRooney RichardCrenna MickeyRooney
+ MickeyRooney RichardCrenna AngelaLansbury MickeyRooney
+ AngelaLansbury MickeyRooney RichardCrenna AngelaLansbury
+ AngelaLansbury AngelaLansbury RichardCrenna]","EdwardGRobinson FredMacMurray EdwardGRobinson EdwardGRobinson
+ FredMacMurray FredMacMurray KevinBacon FredMacMurray
+ EdwardGRobinson KevinBacon EdwardGRobinson FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson EdwardGRobinson KevinBacon]",-11.09,11.39050865,0.113838613,-12399.74146,0,1,0,1,0,0,1
+4,5,0.01,0,0.5,LuiseRainer,74,10671_LuiseRainer_74_f.jpg,"WarrenBeatty PeterFalk MichaelYork MichaelYork PeterFalk
+ PeterFalk PeterFalk PeterFalk MichaelYork WarrenBeatty
+ MichaelYork PeterFalk MichaelYork WarrenBeatty WarrenBeatty
+ PeterFalk PeterFalk WarrenBeatty WarrenBeatty]","EdwardGRobinson FredMacMurray EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson FredMacMurray KevinBacon FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson EdwardGRobinson KevinBacon]",25.08,8.777024269,0.230503067,16118.46821,0,1,0,1,0,0,1
+5,6,0.01,0,0.5,LuiseRainer,27,10674_LuiseRainer_27_f.jpg,"ArnoldSchwarzenegger ArnoldSchwarzenegger GiulianoGemma
+ ArnoldSchwarzenegger HelenHayes GiulianoGemma HelenHayes
+ GiulianoGemma ArnoldSchwarzenegger HelenHayes
+ ArnoldSchwarzenegger GiulianoGemma ArnoldSchwarzenegger
+ GiulianoGemma HelenHayes GiulianoGemma ArnoldSchwarzenegger
+ ArnoldSchwarzenegger HelenHayes]","EdwardFox GladysCooper EdwardFox EdwardFox EdwardFox
+ GladysCooper MickJagger GladysCooper EdwardFox MickJagger
+ EdwardFox GladysCooper EdwardFox EdwardFox MickJagger
+ GladysCooper EdwardFox EdwardFox MickJagger]",-3.79,8.242883682,0.411449075,-27218.47951,0,1,0,1,0,0,1
+6,7,0.01,0,0.5,LuiseRainer,46,10686_LuiseRainer_46_f.jpg,LuiseRainer,HerbertLom,-1.56,10.61277199,0.059606034,6679.276062,1,0,0,1,0,1,0
+7,8,0.01,0,0.5,OrnellaMuti,15,10752_OrnellaMuti_15_f.jpg,OrnellaMuti,OrnellaMuti,4.68,11.60483932,0.412119091,4082.245439,1,0,1,0,1,0,0
+8,9,0.01,0,0.5,OrnellaMuti,21,10757_OrnellaMuti_21_f.jpg,"EdwardFox EdwardFox EdwardFox EdwardFox MickJagger
+ GladysCooper MickJagger GladysCooper EdwardFox MickJagger
+ EdwardFox GladysCooper EdwardFox MickJagger EdwardFox
+ GladysCooper EdwardFox EdwardFox MickJagger]","EdwardFox MickJagger EdwardFox EdwardFox EdwardFox
+ GladysCooper MickJagger GladysCooper EdwardFox MickJagger
+ EdwardFox GladysCooper EdwardFox EdwardFox EdwardFox
+ GladysCooper EdwardFox GladysCooper MickJagger]",-2.49,10.90770531,0.19371061,-14548.46159,0,1,0,1,0,0,1
+9,10,0.01,0,0.5,OrnellaMuti,26,10762_OrnellaMuti_26_f.jpg,OrnellaMuti,PaulAnka,0.4,13.47175217,0.241400003,-11645.70628,1,0,0,1,0,1,0
+10,11,0.01,0,0.5,OrnellaMuti,51,10785_OrnellaMuti_51_f.jpg,OrnellaMuti,EvaMarieSaint,3.7,12.35998631,0.141241208,6162.47011,1,0,0,1,0,1,0
+11,12,0.01,0,0.5,OrnellaMuti,55,10789_OrnellaMuti_55_f.jpg,OrnellaMuti,PaulAnka,0.41,11.2400732,0.44671765,537.5139962,1,0,0,1,0,1,0
+12,13,0.01,0,0.5,OrnellaMuti,57,10791_OrnellaMuti_57_f.jpg,OrnellaMuti,PaulAnka,-8.87,13.19000053,0.0981851,-7197.177523,1,0,0,1,0,1,0
+13,14,0.01,0,0.5,MireilleDarc,34,11665_MireilleDarc_34_f.jpg,MireilleDarc,MireilleDarc,-3.33,10.04461575,0.615018666,21335.26293,1,0,1,0,1,0,0
+14,15,0.01,0,0.5,MireilleDarc,38,11669_MireilleDarc_38_f.jpg,MireilleDarc,MarcelloMastroianni,-1.68,10.26514626,0.316154987,15281.08738,1,0,0,1,0,1,0
+15,16,0.01,0,0.5,MireilleDarc,51,11678_MireilleDarc_51_f.jpg,MireilleDarc,MarcelloMastroianni,-0.2,11.15417767,-0.037037879,-6014.627176,1,0,0,1,0,1,0
+16,17,0.01,0,0.5,MireilleDarc,54,11679_MireilleDarc_54_f.jpg,MireilleDarc,MarcelloMastroianni,2.28,13.6087904,-0.012250341,-8349.53399,1,0,0,1,0,1,0
+17,18,0.01,0,0.5,MireilleDarc,58,11683_MireilleDarc_58_f.jpg,MireilleDarc,MarcelloMastroianni,0.38,11.41094208,0.183549568,-9799.357844,1,0,0,1,0,1,0
+18,19,0.01,0,0.5,BarbaraBouchet,25,11847_BarbaraBouchet_25_f.jpg,"ArnoldSchwarzenegger ArnoldSchwarzenegger ArnoldSchwarzenegger
+ ArnoldSchwarzenegger HelenHayes GiulianoGemma
+ ArnoldSchwarzenegger GiulianoGemma ArnoldSchwarzenegger
+ HelenHayes ArnoldSchwarzenegger GiulianoGemma
+ ArnoldSchwarzenegger GiulianoGemma HelenHayes GiulianoGemma
+ ArnoldSchwarzenegger ArnoldSchwarzenegger HelenHayes]","ArnoldSchwarzenegger HelenHayes ArnoldSchwarzenegger
+ ArnoldSchwarzenegger ArnoldSchwarzenegger GiulianoGemma
+ HelenHayes GiulianoGemma GiulianoGemma HelenHayes
+ ArnoldSchwarzenegger GiulianoGemma ArnoldSchwarzenegger
+ ArnoldSchwarzenegger HelenHayes GiulianoGemma
+ ArnoldSchwarzenegger ArnoldSchwarzenegger HelenHayes]",-3.93,13.80452251,0.156967744,8822.663527,0,1,0,1,0,0,1
+19,20,0.01,0,0.5,BarbaraBouchet,61,11870_BarbaraBouchet_61_f.jpg,BarbaraBouchet,AngieDickinson,1.43,14.5781374,0.197792038,1095.00911,1,0,0,1,0,1,0
+20,21,0.01,0,0.5,BarbaraBouchet,68,11876_BarbaraBouchet_68_f.jpg,BarbaraBouchet,AngieDickinson,-8.62,11.83984661,0.398985565,-2693.377179,1,0,0,1,0,1,0
+21,22,0.01,0,0.5,AngelaLansbury,20,11948_AngelaLansbury_20_f.jpg,AngelaLansbury,AngelaLansbury,0,11.55675793,0.19634743,-1992.733063,1,0,1,0,1,0,0
+22,23,0.01,0,0.5,AngelaLansbury,35,11959_AngelaLansbury_35_f.jpg,AngelaLansbury,AngelaLansbury,-7.31,11.53874016,0.339120775,17863.21541,1,0,1,0,1,0,0
+23,24,0.01,0,0.5,AngelaLansbury,41,11962_AngelaLansbury_41_f.jpg,AngelaLansbury,AngelaLansbury,-1.01,8.043984413,0.095519587,-6678.626226,1,0,1,0,1,0,0
+24,25,0.01,0,0.5,AngelaLansbury,46,11964_AngelaLansbury_46_f.jpg,AngelaLansbury,MickeyRooney,-1.34,12.69842911,0.202814892,-2468.962126,1,0,0,1,0,1,0
+25,26,0.01,0,0.5,AngelaLansbury,60,11971_AngelaLansbury_60_f.jpg,AngelaLansbury,MickeyRooney,-3.97,13.84198284,0.198820129,-9008.132411,1,0,0,1,0,1,0
+26,27,0.01,0,0.5,AngelaLansbury,67,11977_AngelaLansbury_67_f.jpg,AngelaLansbury,AngelaLansbury,-1.24,12.04783535,0.421885401,12574.81804,1,0,1,0,1,0,0
+27,28,0.01,0,0.5,AngelaLansbury,80,11984_AngelaLansbury_80_f.jpg,AngelaLansbury,MickeyRooney,-1.37,11.72077751,0.475399494,-156.7678246,1,0,0,1,0,1,0
+28,29,0.01,0,0.5,AngelaLansbury,87,11989_AngelaLansbury_87_f.jpg,AngelaLansbury,AngelaLansbury,2.43,12.89233685,0.355296403,2263.531641,1,0,1,0,1,0,0
+29,30,0.01,0,0.5,DebbieReynolds,24,12024_DebbieReynolds_24_f.jpg,DebbieReynolds,DebbieReynolds,2.26,11.01068401,0.146580532,-2027.354877,1,0,1,0,1,0,0
+30,31,0.01,0,0.5,DebbieReynolds,69,12045_DebbieReynolds_69_f.jpg,DebbieReynolds,DebbieReynolds,-4.49,13.76630974,0.12155889,23931.30035,1,0,1,0,1,0,0
+31,32,0.01,0,0.5,DebbieReynolds,78,12055_DebbieReynolds_78_f.jpg,DebbieReynolds,DebbieReynolds,4.72,12.67870808,0.306291997,6184.819664,1,0,1,0,1,0,0
+32,33,0.01,0,0.5,EvaMarieSaint,30,12092_EvaMarieSaint_30_f.jpg,EvaMarieSaint,EvaMarieSaint,-1.38,7.86707449,0.108824544,12229.00978,1,0,1,0,1,0,0
+33,34,0.01,0,0.5,EvaMarieSaint,44,12103_EvaMarieSaint_44_f.jpg,EvaMarieSaint,EvaMarieSaint,6.16,6.942784309,0.408900172,16309.6911,1,0,1,0,1,0,0
+34,35,0.01,0,0.5,EvaMarieSaint,73,12115_EvaMarieSaint_73_f.jpg,EvaMarieSaint,EvaMarieSaint,-4.53,10.11118317,0.219861239,-1810.141089,1,0,1,0,1,0,0
+35,36,0.01,0,0.5,EvaMarieSaint,82,12121_EvaMarieSaint_82_f.jpg,EvaMarieSaint,EvaMarieSaint,7.84,13.8921957,0.268858373,7361.170057,1,0,1,0,1,0,0
+36,37,0.01,0,0.5,MickJagger,18,121_MickJagger_18_m.jpg,MickJagger,GladysCooper,-3.77,9.845193863,0.112461008,20373.97876,1,0,0,1,0,1,0
+37,38,0.01,0,0.5,MyrnaLoy,51,12329_MyrnaLoy_51_f.jpg,MyrnaLoy,JonVoight,-1.69,11.7804327,0.239114225,-7127.954392,1,0,0,1,0,1,0
+38,39,0.01,0,0.5,MyrnaLoy,75,12330_MyrnaLoy_75_f.jpg,MyrnaLoy,JonVoight,13.1,10.32157612,0.066807859,-2394.16535,1,0,0,1,0,1,0
+39,40,0.01,0,0.5,MyrnaLoy,20,12337_MyrnaLoy_20_f.jpg,MyrnaLoy,JonVoight,-5.82,10.47114277,-0.101017624,6882.613594,1,0,0,1,0,1,0
+40,41,0.01,0,0.5,MyrnaLoy,67,12364_MyrnaLoy_67_f.jpg,MyrnaLoy,JonVoight,1.05,13.75634193,0.128029451,3719.956901,1,0,0,1,0,1,0
+41,42,0.01,0,0.5,MyrnaLoy,33,12376_MyrnaLoy_33_f.jpg,MyrnaLoy,JonVoight,-4.24,11.61367416,0.172791332,-31744.45559,1,0,0,1,0,1,0
+42,43,0.01,0,0.5,AngieDickinson,47,12425_AngieDickinson_47_f.jpg,AngieDickinson,AngieDickinson,3.41,12.46570778,0.102522001,-4791.346977,1,0,1,0,1,0,0
+43,44,0.01,0,0.5,AngieDickinson,31,12438_AngieDickinson_31_f.jpg,AngieDickinson,AngieDickinson,3.21,7.609881878,0.179887608,13237.32684,1,0,1,0,1,0,0
+44,45,0.01,0,0.5,AngieDickinson,42,12445_AngieDickinson_42_f.jpg,AngieDickinson,AngieDickinson,9.26,13.6832571,0.221789166,-14.82728779,1,0,1,0,1,0,0
+45,46,0.01,0,0.5,AngieDickinson,76,12457_AngieDickinson_76_f.jpg,AngieDickinson,AngieDickinson,-0.58,11.19456482,0.503720403,7432.703236,1,0,1,0,1,0,0
+46,47,0.01,0,0.5,FrancesDee,43,12607_FrancesDee_43_f.jpg,FrancesDee,HerbertLom,0.45,10.75107288,0.201912746,-5852.657764,1,0,0,1,0,1,0
+47,48,0.01,0,0.5,FrancesDee,83,12612_FrancesDee_83_f.jpg,FrancesDee,HerbertLom,1.37,13.87300396,0.034054205,795.8742011,1,0,0,1,0,1,0
+48,49,0.01,0,0.5,FrancesDee,89,12613_FrancesDee_89_f.jpg,FrancesDee,HerbertLom,-4.54,10.61142731,0.229702756,9588.54141,1,0,0,1,0,1,0
+49,50,0.01,0,0.5,GeraldineChaplin,38,13032_GeraldineChaplin_38_f.jpg,"MichaelYork MichaelYork MichaelYork MichaelYork MichaelYork
+ PeterFalk WarrenBeatty PeterFalk MichaelYork WarrenBeatty
+ MichaelYork PeterFalk MichaelYork PeterFalk WarrenBeatty
+ MichaelYork MichaelYork MichaelYork WarrenBeatty]","EdwardFox GladysCooper EdwardFox EdwardFox EdwardFox
+ GladysCooper MickJagger GladysCooper EdwardFox EdwardFox
+ EdwardFox GladysCooper EdwardFox MickJagger EdwardFox
+ MickJagger EdwardFox EdwardFox MickJagger]",-6.52,6.666841984,0.171344131,9534.958661,0,1,0,1,0,0,1
+50,51,0.01,0,0.5,GeraldineChaplin,52,13041_GeraldineChaplin_52_f.jpg,GeraldineChaplin,MichelPiccoli,-0.08,10.64471531,0.311487794,-3861.106375,1,0,0,1,0,1,0
+51,52,0.01,0,0.5,GeraldineChaplin,53,13042_GeraldineChaplin_53_f.jpg,"PaulAnka OrnellaMuti EvaMarieSaint PaulAnka EvaMarieSaint
+ PaulAnka OrnellaMuti OrnellaMuti EvaMarieSaint OrnellaMuti
+ PaulAnka EvaMarieSaint OrnellaMuti PaulAnka EvaMarieSaint
+ EvaMarieSaint EvaMarieSaint PaulAnka OrnellaMuti]","AngieDickinson RonaldReagan AngieDickinson AngieDickinson
+ RonaldReagan BarbaraBouchet AngieDickinson BarbaraBouchet
+ AngieDickinson RonaldReagan AngieDickinson AngieDickinson
+ AngieDickinson AngieDickinson AngieDickinson RonaldReagan
+ RonaldReagan AngieDickinson BarbaraBouchet]",2.21,11.5015974,0.461829662,16498.34699,0,1,1,0,0,0,1
+52,53,0.01,0,0.5,GeraldineChaplin,66,13052_GeraldineChaplin_66_f.jpg,GeraldineChaplin,GeraldineChaplin,-0.15,10.37376976,0.590401709,390.5523386,1,0,1,0,1,0,0
+53,54,0.01,0,0.5,DanielleDarrieux,36,13417_DanielleDarrieux_36_f.jpg,DanielleDarrieux,DirkBogarde,7.09,10.72674274,0.063912898,12492.73639,1,0,0,1,0,1,0
+54,55,0.01,0,0.5,DanielleDarrieux,38,13419_DanielleDarrieux_38_f.jpg,DanielleDarrieux,DanielleDarrieux,2.53,9.478554726,-0.004358524,-2121.199497,1,0,1,0,1,0,0
+55,56,0.01,0,0.5,DanielleDarrieux,40,13420_DanielleDarrieux_40_f.jpg,DanielleDarrieux,DanielleDarrieux,-8.73,13.52409554,0.042019594,7513.652705,1,0,1,0,1,0,0
+56,57,0.01,0,0.5,DanielleDarrieux,64,13436_DanielleDarrieux_64_f.jpg,DanielleDarrieux,DanielleDarrieux,3.01,14.5306139,-0.128759205,-12980.43547,1,0,1,0,1,0,0
+57,58,0.01,0,0.5,DanielleDarrieux,65,13437_DanielleDarrieux_65_f.jpg,DanielleDarrieux,DirkBogarde,0.69,14.04672432,0.092190906,18185.60653,1,0,0,1,0,1,0
+58,59,0.01,0,0.5,HelenHayes,31,13522_HelenHayes_31_f.jpg,HelenHayes,HelenHayes,6.58,8.868649483,0.035885792,6000.650414,1,0,1,0,1,0,0
+59,60,0.01,0,0.5,HelenHayes,52,13526_HelenHayes_52_f.jpg,HelenHayes,HelenHayes,3.65,7.073124409,0.106543608,-5299.78848,1,0,1,0,1,0,0
+60,61,0.01,0,0.5,HelenHayes,23,13533_HelenHayes_23_f.jpg,HelenHayes,HelenHayes,-1.52,14.65180683,0.052205101,21567.91627,1,0,1,0,1,0,0
+61,62,0.01,0,0.5,HelenHayes,34,13537_HelenHayes_34_f.jpg,HelenHayes,HelenHayes,-4.4,9.989520073,0.113334194,3305.830694,1,0,1,0,1,0,0
+62,63,0.01,0,0.5,HelenHayes,85,13539_HelenHayes_85_f.jpg,HelenHayes,HelenHayes,-4.44,13.44005108,0.202261582,-709.3157401,1,0,1,0,1,0,0
+63,64,0.01,0,0.5,HelenHayes,78,13550_HelenHayes_78_f.jpg,HelenHayes,HelenHayes,1.8,10.51344776,0.136747673,-16738.67056,1,0,1,0,1,0,0
+64,65,0.01,0,0.5,HelenHayes,70,13554_HelenHayes_70_f.jpg,HelenHayes,HelenHayes,-2.5,15.44899654,0.01509353,-13798.96676,1,0,1,0,1,0,0
+65,66,0.01,0,0.5,AudreyHepburn,62,14520_AudreyHepburn_62_f.jpg,AudreyHepburn,AnthonyHopkins,2.57,15.8040657,0.037055571,-4808.67052,1,0,0,1,0,1,0
+66,67,0.01,0,0.5,AudreyHepburn,24,14530_AudreyHepburn_24_f.jpg,AudreyHepburn,AnthonyHopkins,0.65,12.11843204,0.024172615,7287.317264,1,0,0,1,0,1,0
+67,68,0.01,0,0.5,AudreyHepburn,24,14531_AudreyHepburn_24_f.jpg,AudreyHepburn,AnthonyHopkins,-1.09,12.10830212,0.057302248,-4239.540299,1,0,0,1,0,1,0
+68,69,0.01,0,0.5,AudreyHepburn,25,14534_AudreyHepburn_25_f.jpg,AudreyHepburn,AnthonyHopkins,-1.95,12.98569393,-0.069499537,-3271.020538,1,0,0,1,0,1,0
+69,70,0.01,0,0.5,AudreyHepburn,32,14537_AudreyHepburn_32_f.jpg,AudreyHepburn,AnthonyHopkins,-2.01,11.51124382,0.004551476,4452.427045,1,0,0,1,0,1,0
+70,71,0.01,0,0.5,AudreyHepburn,36,14551_AudreyHepburn_36_f.jpg,AudreyHepburn,AnthonyHopkins,1.36,12.47977543,0.273036063,3402.831667,1,0,0,1,0,1,0
+71,72,0.01,0,0.5,AnnMiller,15,15001_AnnMiller_15_f.jpg,AnnMiller,AlbertoSordi,-0.04,9.621416092,0.122265905,-2031.226206,1,0,0,1,0,1,0
+72,73,0.01,0,0.5,AnnMiller,17,15003_AnnMiller_17_f.jpg,AnnMiller,AlbertoSordi,-4.09,12.85013294,0.035122607,-3308.981874,1,0,0,1,0,1,0
+73,74,0.01,0,0.5,AnnMiller,21,15007_AnnMiller_21_f.jpg,"EvaMarieSaint PaulAnka EvaMarieSaint EvaMarieSaint
+ EvaMarieSaint OrnellaMuti PaulAnka OrnellaMuti EvaMarieSaint
+ PaulAnka EvaMarieSaint OrnellaMuti EvaMarieSaint OrnellaMuti
+ EvaMarieSaint OrnellaMuti EvaMarieSaint OrnellaMuti PaulAnka]","EdwardGRobinson FredMacMurray EdwardGRobinson EdwardGRobinson
+ FredMacMurray FredMacMurray FredMacMurray FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson FredMacMurray
+ EdwardGRobinson KevinBacon EdwardGRobinson FredMacMurray
+ EdwardGRobinson EdwardGRobinson KevinBacon]",-2.29,6.952270985,0.219304636,-13724.67133,0,1,0,1,0,0,1
+74,75,0.01,0,0.5,AnnMiller,42,15022_AnnMiller_42_f.jpg,AnnMiller,AlbertoSordi,7.98,12.55558586,-0.011882083,-975.9392304,1,0,0,1,0,1,0
+75,76,0.01,0,0.5,AnnMiller,60,15032_AnnMiller_60_f.jpg,AnnMiller,AlbertoSordi,-2.81,10.14155674,0.133739233,-309.8676798,1,0,0,1,0,1,0
+76,77,0.01,0,0.5,DyanCannon,40,15260_DyanCannon_40_f.jpg,DyanCannon,DyanCannon,-1.98,10.1194334,0.014031352,-8878.078709,1,0,1,0,1,0,0
+77,78,0.01,0,0.5,DyanCannon,67,15276_DyanCannon_67_f.jpg,DyanCannon,DyanCannon,-2.15,11.29005337,0.298541993,3971.071175,1,0,1,0,1,0,0
+78,79,0.01,0,0.5,DyanCannon,68,15277_DyanCannon_68_f.jpg,DyanCannon,DyanCannon,-2.42,12.41893101,0.305939913,-301.0204875,1,0,1,0,1,0,0
+79,80,0.01,0,0.5,DyanCannon,70,15279_DyanCannon_70_f.jpg,DyanCannon,DyanCannon,0.57,11.35972023,0.331417054,1984.871641,1,0,1,0,1,0,0
+80,81,0.01,0,0.5,DyanCannon,72,15281_DyanCannon_72_f.jpg,DyanCannon,DyanCannon,-0.78,11.39249325,0.337830395,-2940.762738,1,0,1,0,1,0,0
+81,82,0.01,0,0.5,DyanCannon,75,15283_DyanCannon_75_f.jpg,DyanCannon,DyanCannon,-3.47,11.02958202,0.435706109,10255.57515,1,0,1,0,1,0,0
+82,83,0.01,0,0.5,DyanCannon,32,15289_DyanCannon_32_f.jpg,DyanCannon,GenaRowlands,-2.36,12.30983067,0.363717705,1163.078712,1,0,0,1,0,1,0
+83,84,0.01,0,0.5,JanePowell,14,15369_JanePowell_14_f.jpg,"ArnoldSchwarzenegger ArnoldSchwarzenegger ArnoldSchwarzenegger
+ GiulianoGemma ArnoldSchwarzenegger GiulianoGemma HelenHayes
+ GiulianoGemma ArnoldSchwarzenegger ArnoldSchwarzenegger
+ ArnoldSchwarzenegger GiulianoGemma ArnoldSchwarzenegger
+ HelenHayes GiulianoGemma HelenHayes ArnoldSchwarzenegger
+ ArnoldSchwarzenegger HelenHayes]","EdwardGRobinson FredMacMurray EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson FredMacMurray KevinBacon FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson EdwardGRobinson KevinBacon]",-1.58,12.148283,-0.038628004,-18785.80686,0,1,0,1,0,0,1
+84,85,0.01,0,0.5,JanePowell,38,15388_JanePowell_38_f.jpg,JanePowell,JanePowell,-0.91,12.23607254,0.324678689,10756.49134,1,0,1,0,1,0,0
+85,86,0.01,0,0.5,JanePowell,74,15411_JanePowell_74_f.jpg,JanePowell,JanePowell,-0.25,13.65636539,0.171869516,6150.748436,1,0,1,0,1,0,0
+86,87,0.01,0,0.5,JanePowell,77,15414_JanePowell_77_f.jpg,JanePowell,JanePowell,-3.96,11.93117237,0.424928427,-5708.451035,1,0,1,0,1,0,0
+87,88,0.01,0,0.5,JanePowell,81,15418_JanePowell_81_f.jpg,JanePowell,JanePowell,-5.85,13.61387157,0.218873873,-5051.705512,1,0,1,0,1,0,0
+88,89,0.01,0,0.5,JeanetteMacDonald,32,15468_JeanetteMacDonald_32_f.jpg,JeanetteMacDonald,JeanetteMacDonald,-0.8,8.461362839,0.088904575,2134.036464,1,0,1,0,1,0,0
+89,90,0.01,0,0.5,JeanetteMacDonald,39,15479_JeanetteMacDonald_39_f.jpg,JeanetteMacDonald,JohnnyCash,-1.02,9.391917229,0.066341497,-2802.795421,1,0,0,1,0,1,0
+90,91,0.01,0,0.5,JeanetteMacDonald,44,15484_JeanetteMacDonald_44_f.jpg,"ArnoldSchwarzenegger GiulianoGemma GiulianoGemma
+ ArnoldSchwarzenegger HelenHayes GiulianoGemma HelenHayes
+ GiulianoGemma ArnoldSchwarzenegger HelenHayes
+ ArnoldSchwarzenegger GiulianoGemma ArnoldSchwarzenegger
+ GiulianoGemma HelenHayes ArnoldSchwarzenegger
+ ArnoldSchwarzenegger ArnoldSchwarzenegger HelenHayes]","EdwardFox GladysCooper EdwardFox EdwardFox GladysCooper
+ GladysCooper MickJagger GladysCooper EdwardFox EdwardFox
+ EdwardFox GladysCooper EdwardFox MickJagger GladysCooper
+ MickJagger EdwardFox EdwardFox MickJagger]",4.17,10.68179607,-0.169839054,-6337.066657,0,1,0,1,0,0,1
+91,92,0.01,0,0.5,JeanetteMacDonald,46,15486_JeanetteMacDonald_46_f.jpg,JeanetteMacDonald,JeanetteMacDonald,0.6,11.41623116,0.239692971,19788.51138,1,0,1,0,1,0,0
+92,93,0.01,0,0.5,JeanetteMacDonald,43,15502_JeanetteMacDonald_43_f.jpg,JeanetteMacDonald,JeanetteMacDonald,-7.07,10.9225378,0.317930251,4929.585728,1,0,1,0,1,0,0
+93,94,0.01,0,0.5,JeanetteMacDonald,59,15514_JeanetteMacDonald_59_f.jpg,JeanetteMacDonald,JeanetteMacDonald,-4.2,13.11396503,0.22925131,-7518.743449,1,0,1,0,1,0,0
+94,95,0.01,0,0.5,KateOMara,20,15576_KateOMara_20_f.jpg,KateOMara,JeanetteMacDonald,-0.4,10.25058651,-0.0777127,14047.91856,1,0,0,1,0,1,0
+95,96,0.01,0,0.5,KateOMara,21,15577_KateOMara_21_f.jpg,"AlbertoSordi AnneBaxter AlbertoSordi AlbertoSordi AlbertoSordi
+ AnnMiller AnneBaxter AnnMiller AlbertoSordi AnnMiller
+ AnneBaxter AnnMiller AlbertoSordi AlbertoSordi AnneBaxter
+ AnnMiller AlbertoSordi AlbertoSordi AnneBaxter]","EdwardGRobinson FredMacMurray EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson FredMacMurray KevinBacon FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson EdwardGRobinson
+ FredMacMurray EdwardGRobinson FredMacMurray]",1.66,6.866749763,0.320897073,-8805.433346,0,1,0,1,0,0,1
+96,97,0.01,0,0.5,KateOMara,29,15585_KateOMara_29_f.jpg,KateOMara,JeanetteMacDonald,0.57,14.43108559,0.119438,6028.011241,1,0,0,1,0,1,0
+97,98,0.01,0,0.5,KateOMara,36,15592_KateOMara_36_f.jpg,KateOMara,JeanetteMacDonald,-1.02,12.33211231,0.375652909,-366.1030522,1,0,0,1,0,1,0
+98,99,0.01,0,0.5,KateOMara,43,15599_KateOMara_43_f.jpg,KateOMara,JeanetteMacDonald,4.17,10.79634666,-0.076955788,-4863.04828,1,0,0,1,0,1,0
+99,100,0.01,0,0.5,KateOMara,50,15606_KateOMara_50_f.jpg,KateOMara,JeanetteMacDonald,2.81,14.22218609,0.060914904,-13427.81937,1,0,0,1,0,1,0
+100,101,0.01,0,0.5,KateOMara,52,15608_KateOMara_52_f.jpg,KateOMara,KateOMara,1.64,14.49096298,0.156225666,353.7827658,1,0,1,0,1,0,0
+101,102,0.01,0,0.5,BobDylan,33,1663_BobDylan_33_m.jpg,BobDylan,BobDylan,0.27,9.247854233,0.347813934,5670.651245,1,0,1,0,1,0,0
+102,103,0.01,0,0.5,BobDylan,72,1686_BobDylan_72_m.jpg,BobDylan,JamesCaan,2.39,11.03654003,0.153722778,-204.3688793,1,0,0,1,0,1,0
+103,104,0.01,0,0.5,TomJones,23,1831_TomJones_23_m.jpg,"JeanetteMacDonald JeanetteMacDonald JeanetteMacDonald
+ JeanetteMacDonald JeanetteMacDonald JohnnyCash KateOMara
+ JohnnyCash JeanetteMacDonald JeanetteMacDonald JeanetteMacDonald
+ JohnnyCash JeanetteMacDonald JeanetteMacDonald KateOMara
+ JeanetteMacDonald JeanetteMacDonald JeanetteMacDonald KateOMara]","EdwardGRobinson FredMacMurray EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson FredMacMurray KevinBacon FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson EdwardGRobinson KevinBacon]",1.97,7.535579681,0.119805887,10608.83512,0,1,0,1,0,0,1
+104,105,0.01,0,0.5,TomJones,28,1837_TomJones_28_m.jpg,TomJones,AnthonyHopkins,1.04,5.210739136,0.371553302,-7857.677291,1,0,0,1,0,1,0
+105,106,0.01,0,0.5,TomJones,59,1852_TomJones_59_m.jpg,TomJones,AnthonyHopkins,-3.94,14.0902586,-0.160397395,2577.298507,1,0,0,1,0,1,0
+106,107,0.01,0,0.5,TomJones,64,1857_TomJones_64_m.jpg,TomJones,AnthonyHopkins,3.06,14.42196083,-0.064280756,14369.45863,1,0,0,1,0,1,0
+107,108,0.01,0,0.5,TomJones,66,1859_TomJones_66_m.jpg,TomJones,TomJones,4.64,12.72083378,0.23803474,-777.588962,1,0,1,0,1,0,0
+108,109,0.01,0,0.5,EdwardFox,34,1908_EdwardFox_34_m.jpg,EdwardFox,GladysCooper,1.63,12.0116663,0.218428656,8010.651465,1,0,0,1,0,1,0
+109,110,0.01,0,0.5,EdwardFox,53,1924_EdwardFox_53_m.jpg,EdwardFox,GladysCooper,0.61,12.19251537,0.021724999,16251.36554,1,0,0,1,0,1,0
+110,111,0.01,0,0.5,EdwardFox,63,1930_EdwardFox_63_m.jpg,EdwardFox,GladysCooper,-2.38,9.564268112,0.356557727,12531.18782,1,0,0,1,0,1,0
+111,112,0.01,0,0.5,EdwardFox,76,1939_EdwardFox_76_m.jpg,EdwardFox,GladysCooper,-0.42,13.67750931,0.221572712,-3515.573119,1,0,0,1,0,1,0
+112,113,0.01,0,0.5,JamesCaan,27,1981_JamesCaan_27_m.jpg,"ChristopherWalken MireilleDarc ChristopherWalken
+ MarcelloMastroianni ChristopherWalken MireilleDarc
+ MarcelloMastroianni MarcelloMastroianni ChristopherWalken
+ MireilleDarc MireilleDarc MarcelloMastroianni ChristopherWalken
+ ChristopherWalken ChristopherWalken MarcelloMastroianni
+ MireilleDarc ChristopherWalken MarcelloMastroianni]","EdwardGRobinson FredMacMurray EdwardGRobinson FredMacMurray
+ EdwardGRobinson EdwardGRobinson KevinBacon FredMacMurray
+ EdwardGRobinson KevinBacon EdwardGRobinson FredMacMurray
+ EdwardGRobinson EdwardGRobinson FredMacMurray KevinBacon
+ EdwardGRobinson KevinBacon KevinBacon]",1.54,13.47541809,0.049908765,4991.194062,0,1,0,1,0,0,1
+113,114,0.01,0,0.5,JamesCaan,32,1988_JamesCaan_32_m.jpg,"MireilleDarc MarcelloMastroianni ChristopherWalken
+ ChristopherWalken MarcelloMastroianni MarcelloMastroianni
+ MireilleDarc MarcelloMastroianni ChristopherWalken
+ ChristopherWalken ChristopherWalken MarcelloMastroianni
+ ChristopherWalken ChristopherWalken ChristopherWalken
+ ChristopherWalken MarcelloMastroianni ChristopherWalken
+ ChristopherWalken]","AlbertoSordi AnnMiller AlbertoSordi AnnMiller AnnMiller
+ AnnMiller AnneBaxter AnnMiller AlbertoSordi AnnMiller
+ AlbertoSordi AnnMiller AlbertoSordi AlbertoSordi AlbertoSordi
+ AnnMiller AlbertoSordi AnneBaxter AnnMiller]",3.2,7.756169319,0.370535553,11588.22321,0,1,1,0,0,0,1
+114,115,0.01,0,0.5,JamesCaan,59,2008_JamesCaan_59_m.jpg,JamesCaan,JamesCaan,-1.11,13.00362015,0.281880915,949.4344859,1,0,1,0,1,0,0
+115,116,0.01,0,0.5,JamesCaan,73,2019_JamesCaan_73_m.jpg,JamesCaan,JamesCaan,-0.72,10.96853352,0.435180783,-11133.02493,1,0,1,0,1,0,0
+116,117,0.01,0,0.5,JonVoight,36,2055_JonVoight_36_m.jpg,JonVoight,JonVoight,-1.03,10.80737209,0.362122506,2074.529105,1,0,1,0,1,0,0
+117,118,0.01,0,0.5,JonVoight,50,2065_JonVoight_50_m.jpg,JonVoight,JonVoight,-0.27,8.842394829,0.36237514,10432.99919,1,0,1,0,1,0,0
+118,119,0.01,0,0.5,JonVoight,60,2073_JonVoight_60_m.jpg,JonVoight,JonVoight,-4.06,12.21784687,0.273813039,11878.85707,1,0,1,0,1,0,0
+119,120,0.01,0,0.5,JonVoight,62,2076_JonVoight_62_m.jpg,JonVoight,MelBrooks,0.34,12.92574883,0.274534225,-3385.389323,1,0,0,1,0,1,0
+120,121,0.01,0,0.5,JonVoight,64,2077_JonVoight_64_m.jpg,JonVoight,MelBrooks,-1.96,13.00320435,0.368257761,-1971.749236,1,0,0,1,0,1,0
+121,122,0.01,0,0.5,JonVoight,74,2088_JonVoight_74_m.jpg,JonVoight,JonVoight,-0.17,11.23232079,0.536519527,-1380.652688,1,0,1,0,1,0,0
+122,123,0.01,0,0.5,MelBrooks,40,2097_MelBrooks_40_m.jpg,"AnneBaxter AnnMiller AlbertoSordi AlbertoSordi AnnMiller
+ AnnMiller AnnMiller AnnMiller AlbertoSordi AlbertoSordi
+ AnneBaxter AnnMiller AlbertoSordi AnneBaxter AlbertoSordi
+ AlbertoSordi AnnMiller AnneBaxter AnneBaxter]","EdwardFox GladysCooper EdwardFox EdwardFox EdwardFox
+ GladysCooper MickJagger GladysCooper EdwardFox EdwardFox
+ EdwardFox GladysCooper EdwardFox MickJagger EdwardFox
+ GladysCooper EdwardFox EdwardFox MickJagger]",4.52,7.386470318,0.38717407,-6346.206618,0,1,0,1,0,0,1
+123,124,0.01,0,0.5,MelBrooks,52,2105_MelBrooks_52_m.jpg,MelBrooks,JonVoight,-2.27,12.09828472,0.155794084,-3697.418331,1,0,0,1,0,1,0
+124,125,0.01,0,0.5,MelBrooks,77,2121_MelBrooks_77_m.jpg,MelBrooks,JonVoight,0.97,11.32551575,0.44186604,7801.208504,1,0,0,1,0,1,0
+125,126,0.01,0,0.5,MelBrooks,80,2124_MelBrooks_80_m.jpg,MelBrooks,MelBrooks,-1.47,9.905116081,0.573096216,-4045.286626,1,0,1,0,1,0,0
+126,127,0.01,0,0.5,KevinBacon,27,2709_KevinBacon_27_m.jpg,KevinBacon,EdwardGRobinson,0.31,12.5704031,0.346399456,5249.289696,1,0,0,1,0,1,0
+127,128,0.01,0,0.5,KevinBacon,37,2720_KevinBacon_37_m.jpg,"MyrnaLoy MelBrooks JonVoight MelBrooks JonVoight JonVoight
+ MelBrooks MelBrooks JonVoight MyrnaLoy JonVoight JonVoight
+ MelBrooks JonVoight JonVoight JonVoight MelBrooks JonVoight
+ MelBrooks]","EdwardGRobinson FredMacMurray EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson FredMacMurray KevinBacon FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson FredMacMurray
+ EdwardGRobinson EdwardGRobinson KevinBacon EdwardGRobinson
+ EdwardGRobinson EdwardGRobinson KevinBacon]",1.02,9.254742622,0.15688771,8804.533462,0,1,0,1,0,0,1
+128,129,0.01,0,0.5,KevinBacon,48,2732_KevinBacon_48_m.jpg,KevinBacon,EdwardGRobinson,-1.26,11.1404295,0.549087405,-3600.903748,1,0,0,1,0,1,0
+129,130,0.01,0,0.5,KevinBacon,52,2737_KevinBacon_52_m.jpg,KevinBacon,EdwardGRobinson,0.42,12.35835361,0.336442798,2332.70558,1,0,0,1,0,1,0
+130,131,0.01,0,0.5,MickJagger,47,2785_MickJagger_47_m.jpg,MickJagger,GladysCooper,-0.36,11.30751133,0.200739339,5416.875464,1,0,0,1,0,1,0
+131,132,0.01,0,0.5,MickJagger,63,2792_MickJagger_63_m.jpg,MickJagger,MickJagger,0.12,12.46803379,0.346418262,-6639.925444,1,0,1,0,1,0,0
+132,133,0.01,0,0.5,MickJagger,64,2793_MickJagger_64_m.jpg,MickJagger,GladysCooper,5.78,13.81070328,0.101810716,-6718.620455,1,0,0,1,0,1,0
+133,134,0.01,0,0.5,MickJagger,66,2794_MickJagger_66_m.jpg,MickJagger,EdwardFox,-1.73,11.00140762,0.495365322,-778.6702523,1,0,0,1,0,1,0
+134,135,0.01,0,0.5,MichaelYork,13,3556_MichaelYork_13_m.jpg,"EdwardFox EdwardFox EdwardFox EdwardFox EdwardFox
+ GladysCooper MickJagger GladysCooper EdwardFox MickJagger
+ EdwardFox GladysCooper EdwardFox MickJagger EdwardFox
+ EdwardFox EdwardFox GladysCooper MickJagger]","EdwardGRobinson FredMacMurray EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson FredMacMurray KevinBacon FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson FredMacMurray
+ EdwardGRobinson EdwardGRobinson KevinBacon KevinBacon
+ EdwardGRobinson EdwardGRobinson KevinBacon]",-2.74,5.6925354,0.382323265,5650.985912,0,1,0,1,0,0,1
+135,136,0.01,0,0.5,MichaelYork,50,3579_MichaelYork_50_m.jpg,MichaelYork,PeterFalk,-1.26,11.21002388,0.155587703,-1036.898676,1,0,0,1,0,1,0
+136,137,0.01,0,0.5,MichaelYork,52,3581_MichaelYork_52_m.jpg,MichaelYork,MichaelYork,-0.44,13.95692062,0.314484149,-6976.750441,1,0,1,0,1,0,0
+137,138,0.01,0,0.5,MichaelYork,61,3589_MichaelYork_61_m.jpg,MichaelYork,PeterFalk,-2.43,12.04270363,0.241490453,10533.53854,1,0,0,1,0,1,0
+138,139,0.01,0,0.5,MichaelYork,63,3591_MichaelYork_63_m.jpg,MichaelYork,MichaelYork,-1.46,11.68437099,0.498151004,2227.102191,1,0,1,0,1,0,0
+139,140,0.01,0,0.5,MichaelYork,65,3593_MichaelYork_65_m.jpg,MichaelYork,PeterFalk,2.52,11.48103619,0.313939691,-9309.62593,1,0,0,1,0,1,0
+140,141,0.01,0,0.5,MichaelYork,70,3596_MichaelYork_70_m.jpg,"KevinBacon FredMacMurray EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson KevinBacon KevinBacon EdwardGRobinson
+ EdwardGRobinson KevinBacon KevinBacon FredMacMurray
+ EdwardGRobinson KevinBacon EdwardGRobinson FredMacMurray
+ EdwardGRobinson FredMacMurray KevinBacon]","ArnoldSchwarzenegger GiulianoGemma ArnoldSchwarzenegger
+ ArnoldSchwarzenegger ArnoldSchwarzenegger GiulianoGemma
+ HelenHayes GiulianoGemma ArnoldSchwarzenegger HelenHayes
+ HelenHayes ArnoldSchwarzenegger ArnoldSchwarzenegger HelenHayes
+ ArnoldSchwarzenegger GiulianoGemma ArnoldSchwarzenegger
+ ArnoldSchwarzenegger HelenHayes]",-0.86,13.31481075,0.156972632,-4030.608124,0,1,0,1,0,0,1
+141,142,0.01,0,0.5,GenaRowlands,35,4131_GenaRowlands_35_m.jpg,"AngelaLansbury AngelaLansbury AngelaLansbury AngelaLansbury
+ RichardCrenna MickeyRooney MickeyRooney MickeyRooney
+ MickeyRooney RichardCrenna AngelaLansbury MickeyRooney
+ AngelaLansbury MickeyRooney RichardCrenna MickeyRooney
+ AngelaLansbury AngelaLansbury RichardCrenna]","EdwardGRobinson FredMacMurray EdwardGRobinson EdwardGRobinson
+ FredMacMurray FredMacMurray KevinBacon FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson FredMacMurray
+ EdwardGRobinson KevinBacon EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson KevinBacon KevinBacon]",1.78,12.22400284,-0.026211215,-9494.517906,0,1,0,1,0,0,1
+142,143,0.01,0,0.5,GenaRowlands,48,4138_GenaRowlands_48_m.jpg,GenaRowlands,DyanCannon,2.76,12.84057903,0.171995282,5363.022575,1,0,0,1,0,1,0
+143,144,0.01,0,0.5,GenaRowlands,77,4159_GenaRowlands_77_m.jpg,GenaRowlands,GenaRowlands,0.08,12.82113838,0.307270765,324.1364975,1,0,1,0,1,0,0
+144,145,0.01,0,0.5,MichelPiccoli,34,4736_MichelPiccoli_34_m.jpg,MichelPiccoli,MichelPiccoli,-1.29,6.588384628,0.418387622,-11735.45675,1,0,1,0,1,0,0
+145,146,0.01,0,0.5,MichelPiccoli,51,4757_MichelPiccoli_51_m.jpg,MichelPiccoli,MichelPiccoli,3.16,10.29202747,0.574285209,17530.28526,1,0,1,0,1,0,0
+146,147,0.01,0,0.5,RomanPolanski,33,4885_RomanPolanski_33_m.jpg,RomanPolanski,RomanPolanski,3.83,10.1576643,0.103384092,3645.808743,1,0,1,0,1,0,0
+147,148,0.01,0,0.5,RomanPolanski,73,4918_RomanPolanski_73_m.jpg,"JonVoight MelBrooks JonVoight JonVoight MyrnaLoy JonVoight
+ MelBrooks MelBrooks JonVoight MyrnaLoy JonVoight JonVoight
+ JonVoight MyrnaLoy JonVoight MyrnaLoy MelBrooks MyrnaLoy
+ MyrnaLoy]","RichardCrenna MickeyRooney AngelaLansbury RichardCrenna
+ MickeyRooney MickeyRooney MickeyRooney MickeyRooney
+ AngelaLansbury MickeyRooney RichardCrenna AngelaLansbury
+ AngelaLansbury AngelaLansbury MickeyRooney MickeyRooney
+ MickeyRooney RichardCrenna MickeyRooney]",3,11.33120823,0.456971437,-9615.990857,0,1,0,1,0,0,1
+148,149,0.01,0,0.5,RomanPolanski,76,4921_RomanPolanski_76_m.jpg,RomanPolanski,ScottGlenn,1.38,11.56911087,0.441791475,-7879.032921,1,0,0,1,0,1,0
+149,150,0.01,0,0.5,WarrenBeatty,23,4993_WarrenBeatty_23_m.jpg,"BenGazzara BenGazzara BenGazzara BenGazzara BenGazzara
+ DebbieReynolds DebbieReynolds DebbieReynolds BenGazzara
+ DorisDay DorisDay DebbieReynolds DebbieReynolds DorisDay
+ BenGazzara DorisDay DebbieReynolds DebbieReynolds
+ DebbieReynolds]","EdwardGRobinson FredMacMurray EdwardGRobinson EdwardGRobinson
+ FredMacMurray FredMacMurray KevinBacon FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson FredMacMurray
+ EdwardGRobinson KevinBacon KevinBacon KevinBacon
+ EdwardGRobinson EdwardGRobinson KevinBacon]",-2,11.34757805,0.040044375,4116.764324,0,1,0,1,0,0,1
+150,151,0.01,0,0.5,WarrenBeatty,57,5009_WarrenBeatty_57_m.jpg,WarrenBeatty,PeterFalk,1.6,10.83547211,0.156546697,3463.627878,1,0,0,1,0,1,0
+151,152,0.01,0,0.5,WarrenBeatty,75,5023_WarrenBeatty_75_m.jpg,WarrenBeatty,WarrenBeatty,-1.34,12.00730896,0.3669312,-4940.916274,1,0,1,0,1,0,0
+152,153,0.01,0,0.5,WarrenBeatty,42,5028_WarrenBeatty_42_m.jpg,"KateOMara JohnnyCash JeanetteMacDonald JeanetteMacDonald
+ JohnnyCash JohnnyCash KateOMara JohnnyCash JeanetteMacDonald
+ KateOMara KateOMara JeanetteMacDonald JohnnyCash KateOMara
+ JohnnyCash JohnnyCash JohnnyCash JohnnyCash KateOMara]","EdwardGRobinson FredMacMurray EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson FredMacMurray KevinBacon FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson EdwardGRobinson KevinBacon]",1.65,10.79193497,0.080950111,-757.638215,0,1,0,1,0,0,1
+153,154,0.01,0,0.5,AnthonyHopkins,32,5067_AnthonyHopkins_32_m.jpg,AnthonyHopkins,AnthonyHopkins,-0.75,14.75971413,0.141857475,16210.27215,1,0,1,0,1,0,0
+154,155,0.01,0,0.5,AnthonyHopkins,54,5079_AnthonyHopkins_54_m.jpg,AnthonyHopkins,AnthonyHopkins,-0.93,10.62155724,0.369698286,-6080.08958,1,0,1,0,1,0,0
+155,156,0.01,0,0.5,AnthonyHopkins,72,5096_AnthonyHopkins_72_m.jpg,AnthonyHopkins,AnthonyHopkins,0.99,12.25407696,0.107450813,-3951.465342,1,0,1,0,1,0,0
+156,157,0.01,0,0.5,AnthonyHopkins,76,5109_AnthonyHopkins_76_m.jpg,AnthonyHopkins,AnthonyHopkins,-0.64,11.47406769,0.257016748,4095.861354,1,0,1,0,1,0,0
+157,158,0.01,0,0.5,PeterFalk,39,5594_PeterFalk_39_m.jpg,PeterFalk,PeterFalk,3.63,9.482809067,0.315380275,-5746.727994,1,0,1,0,1,0,0
+158,159,0.01,0,0.5,PeterFalk,47,5601_PeterFalk_47_m.jpg,PeterFalk,MichaelYork,-1.25,12.30737114,0.236564144,115.936343,1,0,0,1,0,1,0
+159,160,0.01,0,0.5,PeterFalk,68,5617_PeterFalk_68_m.jpg,PeterFalk,PeterFalk,-1.4,5.863111973,0.505511165,-2777.707163,1,0,1,0,1,0,0
+160,161,0.01,0,0.5,PeterFalk,74,5621_PeterFalk_74_m.jpg,PeterFalk,MichaelYork,1.09,11.73174953,0.269429088,6024.766451,1,0,0,1,0,1,0
+161,162,0.01,0,0.5,PeterFalk,83,5630_PeterFalk_83_m.jpg,PeterFalk,PeterFalk,2.07,11.85177422,0.336578101,1367.329803,1,0,1,0,1,0,0
+162,163,0.01,0,0.5,BenGazzara,32,5770_BenGazzara_32_m.jpg,BenGazzara,BenGazzara,1.37,10.48058987,0.045691997,5072.773727,1,0,1,0,1,0,0
+163,164,0.01,0,0.5,BenGazzara,73,5792_BenGazzara_73_m.jpg,BenGazzara,BenGazzara,-2.36,11.50211239,0.489312947,-5924.902971,1,0,1,0,1,0,0
+164,165,0.01,0,0.5,HerbertLom,40,5849_HerbertLom_40_m.jpg,HerbertLom,HerbertLom,-4.17,11.71526909,0.162025064,-5424.016312,1,0,1,0,1,0,0
+165,166,0.01,0,0.5,HerbertLom,61,5864_HerbertLom_61_m.jpg,HerbertLom,HerbertLom,0.34,12.73591614,0.406929135,-8162.485159,1,0,1,0,1,0,0
+166,167,0.01,0,0.5,HerbertLom,81,5876_HerbertLom_81_m.jpg,HerbertLom,HerbertLom,-2.76,10.17234039,0.422755271,-9950.246277,1,0,1,0,1,0,0
+167,168,0.01,0,0.5,HerbertLom,93,5881_HerbertLom_93_m.jpg,HerbertLom,HerbertLom,-0.49,12.53754997,0.300313145,5461.831278,1,0,1,0,1,0,0
+168,169,0.01,0,0.5,DirkBogarde,29,6230_DirkBogarde_29_m.jpg,DirkBogarde,DirkBogarde,-5.31,11.81009007,0.358753353,7141.336396,1,0,1,0,1,0,0
+169,170,0.01,0,0.5,DirkBogarde,31,6231_DirkBogarde_31_m.jpg,DirkBogarde,DanielleDarrieux,2.17,8.433246613,0.269937396,-4432.87586,1,0,0,1,0,1,0
+170,171,0.01,0,0.5,DirkBogarde,42,6245_DirkBogarde_42_m.jpg,DirkBogarde,DanielleDarrieux,-1.04,8.030117035,0.088175483,-4806.311625,1,0,0,1,0,1,0
+171,172,0.01,0,0.5,DirkBogarde,43,6246_DirkBogarde_43_m.jpg,DirkBogarde,DanielleDarrieux,1.1,10.01147652,0.047232348,3541.392946,1,0,0,1,0,1,0
+172,173,0.01,0,0.5,DirkBogarde,56,6255_DirkBogarde_56_m.jpg,DirkBogarde,DanielleDarrieux,2.35,13.87530327,0.141819134,13423.11697,1,0,0,1,0,1,0
+173,174,0.01,0,0.5,DirkBogarde,67,6262_DirkBogarde_67_m.jpg,DirkBogarde,DirkBogarde,0.19,10.98400974,0.565590203,-2724.496092,1,0,1,0,1,0,0
+174,175,0.01,0,0.5,JohnnyCash,10,6472_JohnnyCash_10_m.jpg,"ArnoldSchwarzenegger HelenHayes ArnoldSchwarzenegger
+ GiulianoGemma ArnoldSchwarzenegger GiulianoGemma
+ ArnoldSchwarzenegger GiulianoGemma ArnoldSchwarzenegger
+ ArnoldSchwarzenegger ArnoldSchwarzenegger GiulianoGemma
+ ArnoldSchwarzenegger ArnoldSchwarzenegger ArnoldSchwarzenegger
+ GiulianoGemma ArnoldSchwarzenegger ArnoldSchwarzenegger
+ HelenHayes]","ArnoldSchwarzenegger GiulianoGemma ArnoldSchwarzenegger
+ GiulianoGemma ArnoldSchwarzenegger GiulianoGemma HelenHayes
+ GiulianoGemma ArnoldSchwarzenegger GiulianoGemma
+ ArnoldSchwarzenegger GiulianoGemma ArnoldSchwarzenegger
+ ArnoldSchwarzenegger ArnoldSchwarzenegger GiulianoGemma
+ ArnoldSchwarzenegger GiulianoGemma HelenHayes]",-5.58,12.48561954,0.315225959,-821.9519019,0,1,0,1,0,0,1
+175,176,0.01,0,0.5,JohnnyCash,40,6485_JohnnyCash_40_m.jpg,JohnnyCash,KateOMara,-2.03,15.21088123,0.011970379,5814.596465,1,0,0,1,0,1,0
+176,177,0.01,0,0.5,JohnnyCash,69,6493_JohnnyCash_69_m.jpg,JohnnyCash,JeanetteMacDonald,3.33,12.89433289,0.227703869,-14398.22116,1,0,0,1,0,1,0
+177,178,0.01,0,0.5,JohnnyCash,29,6494_JohnnyCash_29_m.jpg,JohnnyCash,JeanetteMacDonald,1.48,11.36891937,0.176323071,6393.965213,1,0,0,1,0,1,0
+178,179,0.01,0,0.5,JohnnyCash,35,6497_JohnnyCash_35_m.jpg,JohnnyCash,JeanetteMacDonald,-2,9.276974678,0.106519707,4835.582839,1,0,0,1,0,1,0
+179,180,0.01,0,0.5,PeterGraves,34,6676_PeterGraves_34_m.jpg,PeterGraves,PeterGraves,6.46,10.14766026,0.642134249,10938.62267,1,0,1,0,1,0,0
+180,181,0.01,0,0.5,PeterGraves,41,6681_PeterGraves_41_m.jpg,PeterGraves,PeterGraves,1.13,9.200946808,0.69499737,-3943.511635,1,0,1,0,1,0,0
+181,182,0.01,0,0.5,PeterGraves,43,6682_PeterGraves_43_m.jpg,"EdwardFox EdwardFox EdwardFox EdwardFox EdwardFox
+ GladysCooper MickJagger GladysCooper EdwardFox EdwardFox
+ EdwardFox GladysCooper EdwardFox GladysCooper EdwardFox
+ GladysCooper EdwardFox EdwardFox MickJagger]","EdwardFox GladysCooper EdwardFox EdwardFox EdwardFox
+ GladysCooper MickJagger GladysCooper EdwardFox MickJagger
+ EdwardFox GladysCooper EdwardFox EdwardFox EdwardFox
+ EdwardFox EdwardFox EdwardFox MickJagger]",3.37,6.306975842,0.367155433,-793.4329491,0,1,0,1,0,0,1
+182,183,0.01,0,0.5,PeterGraves,82,6698_PeterGraves_82_m.jpg,PeterGraves,PeterGraves,-1.84,9.279191971,0.650274992,3739.549017,1,0,1,0,1,0,0
+183,184,0.01,0,0.5,PeterGraves,46,6700_PeterGraves_46_m.jpg,PeterGraves,PeterGraves,-1.16,12.64329338,0.413442343,122.2231096,1,0,1,0,1,0,0
+184,185,0.01,0,0.5,PeterGraves,54,6703_PeterGraves_54_m.jpg,PeterGraves,PeterGraves,-2.02,10.83716297,0.445364177,-9359.262524,1,0,1,0,1,0,0
+185,186,0.01,0,0.5,RoyScheider,39,6792_RoyScheider_39_m.jpg,RoyScheider,RoyScheider,-0.79,11.46819973,0.284805983,265.8622169,1,0,1,0,1,0,0
+186,187,0.01,0,0.5,RoyScheider,56,6806_RoyScheider_56_m.jpg,RoyScheider,RoyScheider,-1.6,13.24631119,0.326456875,-2520.431087,1,0,1,0,1,0,0
+187,188,0.01,0,0.5,RoyScheider,65,6811_RoyScheider_65_m.jpg,RoyScheider,RomanPolanski,1.41,9.366361618,0.213864475,2836.033242,1,0,0,1,0,1,0
+188,189,0.01,0,0.5,ChristopherWalken,29,6992_ChristopherWalken_29_m.jpg,ChristopherWalken,MarcelloMastroianni,4.02,10.02334976,0.641902983,860.7165885,1,0,0,1,0,1,0
+189,190,0.01,0,0.5,ChristopherWalken,50,7012_ChristopherWalken_50_m.jpg,"StВphaneAudran DirkBogarde DanielleDarrieux DanielleDarrieux
+ DirkBogarde DirkBogarde DirkBogarde DirkBogarde
+ DanielleDarrieux DanielleDarrieux StВphaneAudran DirkBogarde
+ DirkBogarde StВphaneAudran DanielleDarrieux StВphaneAudran
+ DirkBogarde StВphaneAudran DirkBogarde]","EdwardGRobinson FredMacMurray EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson FredMacMurray KevinBacon FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson FredMacMurray
+ EdwardGRobinson EdwardGRobinson KevinBacon EdwardGRobinson
+ EdwardGRobinson EdwardGRobinson KevinBacon]",0.56,9.683055878,0.191795692,-4739.163647,0,1,0,1,0,0,1
+190,191,0.01,0,0.5,ChristopherWalken,56,7016_ChristopherWalken_56_m.jpg,ChristopherWalken,MarcelloMastroianni,-0.92,13.11047459,0.160973236,-2557.691419,1,0,0,1,0,1,0
+191,192,0.01,0,0.5,GladysCooper,15,7098_GladysCooper_15_m.jpg,GladysCooper,GladysCooper,-1.32,15.42319012,-0.063187137,1532.320429,1,0,1,0,1,0,0
+192,193,0.01,0,0.5,GladysCooper,74,7121_GladysCooper_74_m.jpg,GladysCooper,GladysCooper,-2.73,13.8112936,0.067068078,957.4045706,1,0,1,0,1,0,0
+193,194,0.01,0,0.5,MickeyRooney,8,7401_MickeyRooney_8_m.jpg,"ArnoldSchwarzenegger HelenHayes ArnoldSchwarzenegger
+ ArnoldSchwarzenegger ArnoldSchwarzenegger GiulianoGemma
+ HelenHayes GiulianoGemma GiulianoGemma HelenHayes
+ ArnoldSchwarzenegger GiulianoGemma ArnoldSchwarzenegger
+ GiulianoGemma HelenHayes ArnoldSchwarzenegger
+ ArnoldSchwarzenegger ArnoldSchwarzenegger HelenHayes]","EdwardFox GladysCooper EdwardFox EdwardFox EdwardFox
+ GladysCooper MickJagger GladysCooper EdwardFox EdwardFox
+ EdwardFox GladysCooper EdwardFox EdwardFox EdwardFox
+ EdwardFox EdwardFox EdwardFox MickJagger]",1.54,8.380241394,0.25439465,-516.8371623,0,1,0,1,0,0,1
+194,195,0.01,0,0.5,MickeyRooney,10,7402_MickeyRooney_10_m.jpg,"ArnoldSchwarzenegger GiulianoGemma ArnoldSchwarzenegger
+ HelenHayes ArnoldSchwarzenegger GiulianoGemma HelenHayes
+ GiulianoGemma ArnoldSchwarzenegger GiulianoGemma
+ ArnoldSchwarzenegger GiulianoGemma ArnoldSchwarzenegger
+ GiulianoGemma HelenHayes ArnoldSchwarzenegger
+ ArnoldSchwarzenegger ArnoldSchwarzenegger HelenHayes]","EdwardGRobinson FredMacMurray EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson FredMacMurray KevinBacon FredMacMurray
+ EdwardGRobinson FredMacMurray KevinBacon EdwardGRobinson
+ EdwardGRobinson KevinBacon EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson KevinBacon KevinBacon]",2.11,10.99702644,0.312320858,8997.508381,0,1,0,1,0,0,1
+195,196,0.01,0,0.5,MickeyRooney,23,7410_MickeyRooney_23_m.jpg,MickeyRooney,AngelaLansbury,-2.77,12.42910099,0.057439256,-4553.527849,1,0,0,1,0,1,0
+196,197,0.01,0,0.5,MickeyRooney,33,7416_MickeyRooney_33_m.jpg,"ArnoldSchwarzenegger HelenHayes ArnoldSchwarzenegger
+ ArnoldSchwarzenegger ArnoldSchwarzenegger GiulianoGemma
+ ArnoldSchwarzenegger GiulianoGemma ArnoldSchwarzenegger
+ HelenHayes HelenHayes GiulianoGemma ArnoldSchwarzenegger
+ GiulianoGemma ArnoldSchwarzenegger GiulianoGemma
+ ArnoldSchwarzenegger ArnoldSchwarzenegger HelenHayes]","EdwardGRobinson FredMacMurray EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson FredMacMurray KevinBacon FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson KevinBacon
+ EdwardGRobinson EdwardGRobinson KevinBacon]",-5.85,8.479306221,0.239165172,3981.115972,0,1,0,1,0,0,1
+197,198,0.01,0,0.5,MickeyRooney,63,7431_MickeyRooney_63_m.jpg,MickeyRooney,MickeyRooney,0.98,11.44640446,0.562247097,-8495.203017,1,0,1,0,1,0,0
+198,199,0.01,0,0.5,MickeyRooney,77,7436_MickeyRooney_77_m.jpg,MickeyRooney,MickeyRooney,1.09,10.10359669,0.589166462,4699.230825,1,0,1,0,1,0,0
+199,200,0.01,0,0.5,MickeyRooney,78,7437_MickeyRooney_78_m.jpg,MickeyRooney,MickeyRooney,0.87,9.692075729,0.638861716,-9496.681055,1,0,1,0,1,0,0
+200,201,0.01,0,0.5,AlbertoSordi,45,7764_AlbertoSordi_45_m.jpg,AlbertoSordi,AlbertoSordi,0.87,8.209024429,0.413143963,-2509.935724,1,0,1,0,1,0,0
+201,202,0.01,0,0.5,AlbertoSordi,50,7766_AlbertoSordi_50_m.jpg,AlbertoSordi,AlbertoSordi,-1.24,9.084759712,0.099943303,-1472.524026,1,0,1,0,1,0,0
+202,203,0.01,0,0.5,AlbertoSordi,76,7779_AlbertoSordi_76_m.jpg,AlbertoSordi,AlbertoSordi,-2.59,12.73918533,0.110259026,13752.81697,1,0,1,0,1,0,0
+203,204,0.01,0,0.5,RichardCrenna,18,8305_RichardCrenna_18_m.jpg,RichardCrenna,AngelaLansbury,2.13,12.52653885,0.037638042,4160.489153,1,0,0,1,0,1,0
+204,205,0.01,0,0.5,RichardCrenna,28,8308_RichardCrenna_28_m.jpg,"AlbertoSordi AnnMiller AlbertoSordi AlbertoSordi AnnMiller
+ AnnMiller AnneBaxter AnnMiller AlbertoSordi AnneBaxter
+ AlbertoSordi AnnMiller AlbertoSordi AnnMiller AlbertoSordi
+ AnnMiller AnnMiller AlbertoSordi AnneBaxter]","EdwardGRobinson FredMacMurray EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson FredMacMurray KevinBacon FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson EdwardGRobinson KevinBacon]",-0.67,8.983241081,0.183155775,2139.979449,0,1,0,1,0,0,1
+205,206,0.01,0,0.5,RichardCrenna,64,8338_RichardCrenna_64_m.jpg,RichardCrenna,RichardCrenna,2.16,10.49280071,0.512993574,-321.5705363,1,0,1,0,1,0,0
+206,207,0.01,0,0.5,PaulAnka,65,85_PaulAnka_65_m.jpg,PaulAnka,PaulAnka,-3.27,10.11475658,0.513933837,-1424.88087,1,0,1,0,1,0,0
+207,208,0.01,0,0.5,ArnoldSchwarzenegger,32,8825_ArnoldSchwarzenegger_32_m.jpg,ArnoldSchwarzenegger,HelenHayes,3.61,13.00007057,0.43878597,-5153.46637,1,0,0,1,0,1,0
+208,209,0.01,0,0.5,ArnoldSchwarzenegger,41,8833_ArnoldSchwarzenegger_41_m.jpg,"AlbertoSordi AlbertoSordi AlbertoSordi AnnMiller AlbertoSordi
+ AnnMiller AnneBaxter AnnMiller AlbertoSordi AnneBaxter
+ AlbertoSordi AnnMiller AnnMiller AnneBaxter AlbertoSordi
+ AnneBaxter AnnMiller AnneBaxter AnneBaxter]","EdwardFox GladysCooper EdwardFox EdwardFox EdwardFox
+ GladysCooper MickJagger GladysCooper EdwardFox EdwardFox
+ EdwardFox GladysCooper EdwardFox EdwardFox EdwardFox
+ EdwardFox EdwardFox EdwardFox MickJagger]",-2.33,8.906884193,-0.012488962,5329.061163,0,1,0,1,0,0,1
+209,210,0.01,0,0.5,ArnoldSchwarzenegger,54,8843_ArnoldSchwarzenegger_54_m.jpg,ArnoldSchwarzenegger,HelenHayes,3.85,14.04660416,-0.016714746,-1075.076043,1,0,0,1,0,1,0
+210,211,0.01,0,0.5,ArnoldSchwarzenegger,61,8852_ArnoldSchwarzenegger_61_m.jpg,ArnoldSchwarzenegger,ArnoldSchwarzenegger,-1.23,9.696458817,0.640426219,-1899.522475,1,0,1,0,1,0,0
+211,212,0.01,0,0.5,PaulAnka,67,88_PaulAnka_67_m.jpg,PaulAnka,PaulAnka,-0.85,10.79396057,0.446682364,324.3560327,1,0,1,0,1,0,0
+212,213,0.01,0,0.5,FredMacMurray,28,8948_FredMacMurray_28_m.jpg,FredMacMurray,EdwardGRobinson,-0.96,12.88809299,0.244966283,-6309.219177,1,0,0,1,0,1,0
+213,214,0.01,0,0.5,FredMacMurray,31,8950_FredMacMurray_31_m.jpg,FredMacMurray,EdwardGRobinson,2.38,11.40607262,-0.064298838,4104.390955,1,0,0,1,0,1,0
+214,215,0.01,0,0.5,FredMacMurray,51,8964_FredMacMurray_51_m.jpg,FredMacMurray,EdwardGRobinson,-3.34,11.27990437,-0.016843503,1990.656055,1,0,0,1,0,1,0
+215,216,0.01,0,0.5,FredMacMurray,74,8978_FredMacMurray_74_m.jpg,FredMacMurray,FredMacMurray,2.17,12.31212711,0.388459921,5156.687233,1,0,1,0,1,0,0
+216,217,0.01,0,0.5,JeanClaudeVanDamme,28,9043_JeanClaudeVanDamme_28_m.jpg,JeanClaudeVanDamme,MichelPiccoli,-2.87,11.05508804,0.462602198,10928.51499,1,0,0,1,0,1,0
+217,218,0.01,0,0.5,JeanClaudeVanDamme,44,9062_JeanClaudeVanDamme_44_m.jpg,JeanClaudeVanDamme,MichelPiccoli,3.5,12.29385853,0.324761391,-206.6824181,1,0,0,1,0,1,0
+218,219,0.01,0,0.5,JeanClaudeVanDamme,51,9066_JeanClaudeVanDamme_51_m.jpg,JeanClaudeVanDamme,MichelPiccoli,-1.06,9.800134659,0.433028936,4947.562943,1,0,0,1,0,1,0
+219,220,0.01,0,0.5,JeanClaudeVanDamme,52,9068_JeanClaudeVanDamme_52_m.jpg,JeanClaudeVanDamme,MichelPiccoli,-0.87,12.47660351,0.351748854,2411.812007,1,0,0,1,0,1,0
+220,221,0.01,0,0.5,JeanClaudeVanDamme,43,9072_JeanClaudeVanDamme_43_m.jpg,JeanClaudeVanDamme,JeanClaudeVanDamme,-1.02,7.544580936,0.364875674,9060.430653,1,0,1,0,1,0,0
+221,222,0.01,0,0.5,JeanClaudeVanDamme,53,9079_JeanClaudeVanDamme_53_m.jpg,JeanClaudeVanDamme,MichelPiccoli,2.09,14.58596611,0.030113973,-5339.050205,1,0,0,1,0,1,0
+222,223,0.01,0,0.5,PaulAnka,70,90_PaulAnka_70_m.jpg,PaulAnka,PaulAnka,0.69,11.28677464,0.549444854,-1557.514037,1,0,1,0,1,0,0
+223,224,0.01,0,0.5,MarcelloMastroianni,28,9570_MarcelloMastroianni_28_m.jpg,MarcelloMastroianni,MarcelloMastroianni,-1.08,7.38239193,0.287036687,-823.8206259,1,0,1,0,1,0,0
+224,225,0.01,0,0.5,MarcelloMastroianni,32,9574_MarcelloMastroianni_32_m.jpg,MarcelloMastroianni,MarcelloMastroianni,1.21,10.31424332,0.552682579,3576.396361,1,0,1,0,1,0,0
+225,226,0.01,0,0.5,MarcelloMastroianni,65,9602_MarcelloMastroianni_65_m.jpg,MarcelloMastroianni,MarcelloMastroianni,-0.72,13.78982925,0.267668903,5029.5011,1,0,1,0,1,0,0
+226,227,0.01,0,0.5,MarcelloMastroianni,71,9608_MarcelloMastroianni_71_m.jpg,MarcelloMastroianni,MarcelloMastroianni,0.68,12.4110117,0.233786523,-8699.306671,1,0,1,0,1,0,0
+227,228,0.01,0,0.5,DorisDay,48,9701_DorisDay_48_f.jpg,DorisDay,DebbieReynolds,1.98,13.1643858,0.190740407,-8079.104914,1,0,0,1,0,1,0
+228,229,0.01,0,0.5,DorisDay,38,9707_DorisDay_38_f.jpg,DorisDay,DebbieReynolds,-2.69,10.74552441,0.527746916,3793.620344,1,0,0,1,0,1,0
+229,230,0.01,0,0.5,DorisDay,29,9715_DorisDay_29_f.jpg,DorisDay,BenGazzara,1.75,12.22734261,-0.169218063,-4145.030738,1,0,0,1,0,1,0
+230,231,0.01,0,0.5,DorisDay,36,9722_DorisDay_36_f.jpg,DorisDay,DebbieReynolds,1.81,13.34570217,0.153568119,-2069.678762,1,0,0,1,0,1,0
+231,232,0.01,0,0.5,DorisDay,46,9729_DorisDay_46_f.jpg,"ArnoldSchwarzenegger ArnoldSchwarzenegger HelenHayes
+ ArnoldSchwarzenegger HelenHayes GiulianoGemma
+ ArnoldSchwarzenegger GiulianoGemma ArnoldSchwarzenegger
+ HelenHayes ArnoldSchwarzenegger GiulianoGemma
+ ArnoldSchwarzenegger GiulianoGemma ArnoldSchwarzenegger
+ ArnoldSchwarzenegger ArnoldSchwarzenegger ArnoldSchwarzenegger
+ HelenHayes]","EdwardGRobinson FredMacMurray EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson EdwardGRobinson KevinBacon FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson FredMacMurray
+ EdwardGRobinson EdwardGRobinson EdwardGRobinson EdwardGRobinson
+ EdwardGRobinson EdwardGRobinson KevinBacon]",-2.24,7.44630909,0.188227743,-9802.747897,0,1,0,1,0,0,1
+232,233,0.01,0,0.5,DorisDay,65,9737_DorisDay_65_f.jpg,DorisDay,BenGazzara,-0.17,9.637433052,0.411486834,-382.2329042,1,0,0,1,0,1,0
+233,234,0.01,0,0.5,DorisDay,68,9740_DorisDay_68_f.jpg,DorisDay,BenGazzara,-2.67,13.05119133,0.199573889,-7262.777656,1,0,0,1,0,1,0
+234,235,0.01,0,0.5,TomJones,24,9753_TomJones_24_f.jpg,TomJones,AnthonyHopkins,0.78,12.75742626,0.156271175,-649.1719142,1,0,0,1,0,1,0
+235,236,0.01,0,0.5,TomJones,38,9764_TomJones_38_f.jpg,TomJones,TomJones,-2.74,13.47558784,0.12428014,5606.807375,1,0,1,0,1,0,0
+236,237,0.01,0,0.5,TomJones,68,9782_TomJones_68_f.jpg,TomJones,TomJones,-2.06,11.08627319,0.484932005,-6180.347268,1,0,1,0,1,0,0
+237,238,0.01,0,0.5,TomJones,69,9783_TomJones_69_f.jpg,TomJones,TomJones,0.01,10.51926327,0.565518856,0.000168078,1,0,1,0,1,0,0
+238,239,0.01,0,0.5,PaulAnka,46,99_PaulAnka_46_m.jpg,"ChristopherWalken MarcelloMastroianni ChristopherWalken
+ ChristopherWalken ChristopherWalken MarcelloMastroianni
+ MireilleDarc MarcelloMastroianni ChristopherWalken
+ MarcelloMastroianni ChristopherWalken MarcelloMastroianni
+ ChristopherWalken MireilleDarc ChristopherWalken
+ MarcelloMastroianni MarcelloMastroianni ChristopherWalken
+ MireilleDarc]","ArnoldSchwarzenegger ArnoldSchwarzenegger ArnoldSchwarzenegger
+ ArnoldSchwarzenegger ArnoldSchwarzenegger GiulianoGemma
+ HelenHayes GiulianoGemma ArnoldSchwarzenegger HelenHayes
+ HelenHayes GiulianoGemma ArnoldSchwarzenegger
+ ArnoldSchwarzenegger ArnoldSchwarzenegger GiulianoGemma
+ ArnoldSchwarzenegger ArnoldSchwarzenegger HelenHayes]",-13.93,3.908329725,0.708922267,45988.94409,0,1,1,0,0,0,1
