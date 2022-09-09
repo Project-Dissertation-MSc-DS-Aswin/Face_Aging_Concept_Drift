@@ -1,6 +1,24 @@
 # Face Aging Concept Drift
 
-### FOLDER STRUCTURE
+## **RESULTS**
+
+### **Anomaly Detection using GaussianMixtureModel**
+
+![./images/gaussianmixturemodel-anomaly.png](./images/gaussianmixturemodel-anomaly.png)
+
+### **Real Drift Classifier Approach using GaussianProcessClassifier**
+
+![./images/gaussianprocessclassifier-real.png](./images/gaussianprocessclassifier-real.png)
+
+### **Virtual Drift Classifier Approach using GaussianProcessClassifier**
+
+![./images/Gaussianprocessclassifier-virtual.png](./images/Gaussianprocessclassifier-virtual.png)
+
+## **RESULTS Comparison**
+
+!["./images/comparison-of-accuracy-drift.png"](./images/comparison-of-accuracy-drift.png)
+
+### **FOLDER STRUCTURE**
 
 ```
 |   LICENSE
