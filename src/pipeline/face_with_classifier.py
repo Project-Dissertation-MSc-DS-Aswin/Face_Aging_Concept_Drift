@@ -281,8 +281,8 @@ if __name__ == "__main__":
       except Exception as e:
         print(e.args)
       
-    # chunk datasets from training into testing
-    faces_chunk_array_test, face_classes_array_test = faces_chunk_array_train, face_classes_array_train
+    # chunk data from test and train
+        faces_chunk_array_test, face_classes_array_test = np.concatenate([faces_chunk_array_train, faces_chunk_array_test], axis=0), np.concatenate([face_classes_array_train, face_classes_array_test], axis=0)
     
     # test and evaluate using existing model
     accuracy, recall = algorithm.test_and_evaluate(voting_classifier_array, faces_chunk_array_test, face_classes_array_test, dataframe,
