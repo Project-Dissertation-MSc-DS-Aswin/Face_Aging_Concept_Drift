@@ -1,5 +1,21 @@
 # Face Aging Concept Drift
 
+## **IMPORT MODELS**
+
+Import model for Face Recognition by FaceNet
+
+```
+wget https://project-dissertation.s3.eu-west-2.amazonaws.com/facenet_keras.h5
+```
+
+Import model for Face Recognition by CVAE (Convolutional Variational Autoencoder)
+
+```
+wget https://project-dissertation.s3.eu-west-2.amazonaws.com/vit_face_recognition_model.h5
+```
+
+
+
 ## **RESULTS**
 
 ### **Anomaly Detection using GaussianMixtureModel**
