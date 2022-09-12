@@ -26,7 +26,12 @@ cp -Rf src/models/16.07.2022_two_classifiers/*.pkl src/models
 
 ## **Using Docker**
 
+Execute these commands in series
+--------------------------------
+
 ```
+
+git clone https://github.com/Project-Dissertation-MSc-DS-Aswin/Face_Aging_Concept_Drift/
 
 docker-compose up -d
 
