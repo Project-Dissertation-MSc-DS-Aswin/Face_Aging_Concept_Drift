@@ -10,11 +10,11 @@ services:
       - .:/home/project
     networks:
       static-network:
-        ipv4_address: 172.10.0.5
+        ipv4_address: 172.20.0.6
 networks:
   static-network:
     ipam:
       config:
-        - subnet: 172.10.0.0/16
+        - subnet: 172.20.0.0/16
           #docker-compose v3+ do not use ip_range
           # ip_range: 192.168.0.1/24

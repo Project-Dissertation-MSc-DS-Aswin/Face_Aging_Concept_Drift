@@ -10,7 +10,7 @@ RUN set -ex && apt-get install build-essential python3-distutils python3-apt -y
 RUN apt install software-properties-common -y
 RUN add-apt-repository ppa:deadsnakes/ppa
 RUN apt install python3.7 -y
-COPY get-pip.py /home/project/get-pip.py
+RUN wget https://bootstrap.pypa.io/get-pip.py -P /home/project
 RUN apt-get install python3.7-distutils -y
 RUN python3.7 get-pip.py
 COPY ./requirements.txt /home/project
@@ -31,13 +31,17 @@ RUN pip3.7 install opencv-python
 RUN pip3.7 install redis aioredis
 RUN pip3.7 install matplotlib
 
+COPY src/models /home/project/src/models
+
 RUN wget https://project-dissertation.s3.eu-west-2.amazonaws.com/facenet_keras.h5 -P /home/project/src/models
 RUN wget https://project-dissertation.s3.eu-west-2.amazonaws.com/vit_face_recognition_model.h5 -P /home/project/src/models
 
-RUN unzip /home/project/src/models/all_models.zip /src/models
-RUN cp -Rf /home/project/src/models/all_models/*.pkl /home/project/src/models
-RUN unzip /home/project/src/models/16.07.2022_two_classifiers.zip /src/models
-RUN cp -Rf /home/project/src/models/16.07.2022_two_classifiers/*.pkl /home/project/src/models
+WORKDIR /home/project
+
+RUN unzip /home/project/src/models/all_ml_models.zip -d /home/project/src/models
+# RUN cp -Rf /home/project/src/models/all_ml_models/*.pkl /home/project/src/models
+RUN unzip /home/project/src/models/16.07.2022_two_classifiers.zip -d /home/project/src/models
+# RUN cp -Rf /home/project/src/models/16.07.2022_two_classifiers/*.pkl /home/project/src/models
 
 WORKDIR /home/project/
 

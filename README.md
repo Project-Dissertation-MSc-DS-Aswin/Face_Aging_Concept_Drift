@@ -24,6 +24,15 @@ unzip -P ByrMAP@15 src/models/16.07.2022_two_classifiers.zip src/models
 cp -Rf src/models/16.07.2022_two_classifiers/*.pkl src/models
 ```
 
+## **Using Docker**
+
+```
+docker-compose up -d
+
+docker-compose exec face_aging_concept_drift unzip /home/project/src/models/all_ml_models.zip -d /home/project/src/models
+docker-compose exec face_aging_concept_drift unzip /home/project/src/models/16.07.2022_two_classifiers.zip -d /home/project/src/models
+```
+
 ## **RESULTS**
 
 ### **Anomaly Detection using GaussianMixtureModel**
