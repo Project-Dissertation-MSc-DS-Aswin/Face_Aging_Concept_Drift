@@ -1,5 +1,27 @@
 # Face Aging Concept Drift
 
+## **Requirements**
+
+- torch
+- torchvision
+- numpy
+- Pillow
+- whylogs
+- scipy
+- pandas
+- tqdm
+- keras
+- tensorflow
+- scikit-learn
+- opencv-python
+- scikit-image
+- mlflow
+
+## **Environment**
+
+- Python: 3.7
+- Redis: 7.0.4
+
 ## **IMPORT MODELS**
 
 Import model for Face Recognition by FaceNet
