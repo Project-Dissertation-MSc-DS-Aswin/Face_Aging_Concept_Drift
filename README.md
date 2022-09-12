@@ -5,16 +5,24 @@
 Import model for Face Recognition by FaceNet
 
 ```
-wget https://project-dissertation.s3.eu-west-2.amazonaws.com/facenet_keras.h5
+wget https://project-dissertation.s3.eu-west-2.amazonaws.com/facenet_keras.h5 -P src/models
 ```
 
 Import model for Face Recognition by CVAE (Convolutional Variational Autoencoder)
 
 ```
-wget https://project-dissertation.s3.eu-west-2.amazonaws.com/vit_face_recognition_model.h5
+wget https://project-dissertation.s3.eu-west-2.amazonaws.com/vit_face_recognition_model.h5 -P src/models
 ```
 
+```
+unzip src/models/all_models.zip src/models
+cp -Rf src/models/all_models/*.pkl src/models
+```
 
+```
+unzip src/models/16.07.2022_two_classifiers.zip src/models
+cp -Rf src/models/16.07.2022_two_classifiers/*.pkl src/models
+```
 
 ## **RESULTS**
 

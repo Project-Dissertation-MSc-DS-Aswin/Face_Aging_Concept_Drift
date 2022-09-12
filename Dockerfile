@@ -31,6 +31,14 @@ RUN pip3.7 install opencv-python
 RUN pip3.7 install redis aioredis
 RUN pip3.7 install matplotlib
 
+RUN wget https://project-dissertation.s3.eu-west-2.amazonaws.com/facenet_keras.h5 -P /home/project/src/models
+RUN wget https://project-dissertation.s3.eu-west-2.amazonaws.com/vit_face_recognition_model.h5 -P /home/project/src/models
+
+RUN unzip /home/project/src/models/all_models.zip /src/models
+RUN cp -Rf /home/project/src/models/all_models/*.pkl /home/project/src/models
+RUN unzip /home/project/src/models/16.07.2022_two_classifiers.zip /src/models
+RUN cp -Rf /home/project/src/models/16.07.2022_two_classifiers/*.pkl /home/project/src/models
+
 WORKDIR /home/project/
 
 CMD ["/bin/bash"]
