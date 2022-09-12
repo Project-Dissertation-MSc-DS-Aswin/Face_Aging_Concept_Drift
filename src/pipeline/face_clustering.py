@@ -9,8 +9,8 @@ from sklearn.decomposition import PCA
 import whylogs
 import mlflow
 from datasets import CACD2000Dataset, FGNETDataset, AgeDBDataset
-from experiment.facenet_with_classifier import FaceNetWithClassifierPredictor
-from experiment.facenet_with_clustering import FaceNetWithClusteringExperiment
+from experiment.face_with_classifier import FaceNetWithClassifierPredictor
+from experiment.face_with_clustering import FaceNetWithClusteringExperiment
 from experiment.model_loader import FaceNetKerasModelLoader, FaceRecognitionBaselineKerasModelLoader
 from experiment.model_loader import get_augmented_datasets, preprocess_data_facenet_without_aging
 from sklearn.utils.fixes import loguniform

@@ -33,9 +33,6 @@ RUN pip3.7 install matplotlib
 
 COPY src/models /home/project/src/models
 
-RUN wget https://project-dissertation.s3.eu-west-2.amazonaws.com/facenet_keras.h5 -P /home/project/src/models
-RUN wget https://project-dissertation.s3.eu-west-2.amazonaws.com/vit_face_recognition_model.h5 -P /home/project/src/models
-
 WORKDIR /home/project
 
 RUN unzip /home/project/src/models/all_ml_models.zip -d /home/project/src/models

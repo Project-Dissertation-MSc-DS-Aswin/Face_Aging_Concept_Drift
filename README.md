@@ -27,10 +27,15 @@ cp -Rf src/models/16.07.2022_two_classifiers/*.pkl src/models
 ## **Using Docker**
 
 ```
+
 docker-compose up -d
 
 docker-compose exec face_aging_concept_drift unzip /home/project/src/models/all_ml_models.zip -d /home/project/src/models
 docker-compose exec face_aging_concept_drift unzip /home/project/src/models/16.07.2022_two_classifiers.zip -d /home/project/src/models
+
+docker-compose exec face_aging_concept_drift wget https://project-dissertation.s3.eu-west-2.amazonaws.com/facenet_keras.h5 -P /home/project/src/models
+docker-compose exec face_aging_concept_drift wget https://project-dissertation.s3.eu-west-2.amazonaws.com/vit_face_recognition_model.h5 -P /home/project/src/models
+
 ```
 
 ## **RESULTS**
@@ -370,60 +375,60 @@ The project consists of experiments and pipelines
 ## **How to extract the CDA-FedAvg results**
 
 ```
-python .\drift_cda_fedavg.py dataset=agedb model_path=../models/facenet_keras.h5 batch_size=128 metadata=../dataset_meta/AgeDB_metadata.mat no_of_samples=245 tracking_uri="mlruns/" logger_name=drift_cda_fedavg experiment_id=0 model=FaceNetKeras input_shape=-1,160,160,3 data_dir="../../../datasets/AgeDB" drift_synthesis_metrics=../data_collection/16.07.2022_two_classifiers_facenet/facenet_agedb_drift_evaluate_difference.csv 
+python3.7 .\drift_cda_fedavg.py dataset=agedb model_path=../models/facenet_keras.h5 batch_size=128 metadata=../dataset_meta/AgeDB_metadata.mat no_of_samples=245 tracking_uri="mlruns/" logger_name=drift_cda_fedavg experiment_id=0 model=FaceNetKeras input_shape=-1,160,160,3 data_dir="../../../datasets/AgeDB" drift_synthesis_metrics=../data_collection/16.07.2022_two_classifiers_facenet/facenet_agedb_drift_evaluate_difference.csv 
 ```
 
 ## **How to classify Faces by images**
 
 ```
-python face_classification_by_images.py model=YuNet_onnx model_path=../models/face_detection_yunet_2022mar.onnx no_of_samples=1288 logger_name=face_classification_by_images tracking_uri="mlruns/" data_dir=../../../datasets/AgeDB experiment_id=3
+python3.7 face_classification_by_images.py model=YuNet_onnx model_path=../models/face_detection_yunet_2022mar.onnx no_of_samples=1288 logger_name=face_classification_by_images tracking_uri="mlruns/" data_dir=../../../datasets/AgeDB experiment_id=3
 ```
 
 ## **How to cluster face images and send the results to classification pipeline**
 
 ```
-python .\face_clustering.py dataset=agedb model_path=../models/facenet_keras.h5 batch_size=128 metadata=../dataset_meta/AgeDB_metadata.mat no_of_samples=2598 tracking_uri="mlruns/" logger_name=facenet_model_clustering collect_for=classification experiment_id=0 classifier_test_younger=../models/facenet_agedb_voting_classifier_age_test_younger.pkl model=FaceNetKeras input_shape=-1,160,160,3 data_dir="../../../datasets/AgeDB" drift_evaluate_metrics_test_younger=../data_collection/facenet_agedb_drift_evaluate_metrics_test_younger.csv drift_evaluate_metrics_train_younger=../data_collection/facenet_agedb_drift_evaluate_metrics_train_younger.csv classifier_train_younger=../models/facenet_agedb_voting_classifier_age_train_younger.pkl classifier_test_younger=../models/facenet_agedb_voting_classifier_age_test_younger.pkl drift_evaluate_metrics=../data_collection/facenet_agedb_drift_evaluate_metrics_clustering.csv eps=11.0 min_samples=1 experiment_id=0 min_samples=16 eps=2.5
+python3.7 .\face_clustering.py dataset=agedb model_path=../models/facenet_keras.h5 batch_size=128 metadata=../dataset_meta/AgeDB_metadata.mat no_of_samples=2598 tracking_uri="mlruns/" logger_name=facenet_model_clustering collect_for=classification experiment_id=0 classifier_test_younger=../models/facenet_agedb_voting_classifier_age_test_younger.pkl model=FaceNetKeras input_shape=-1,160,160,3 data_dir="../../../datasets/AgeDB" drift_evaluate_metrics_test_younger=../data_collection/facenet_agedb_drift_evaluate_metrics_test_younger.csv drift_evaluate_metrics_train_younger=../data_collection/facenet_agedb_drift_evaluate_metrics_train_younger.csv classifier_train_younger=../models/facenet_agedb_voting_classifier_age_train_younger.pkl classifier_test_younger=../models/facenet_agedb_voting_classifier_age_test_younger.pkl drift_evaluate_metrics=../data_collection/facenet_agedb_drift_evaluate_metrics_clustering.csv eps=11.0 min_samples=1 experiment_id=0 min_samples=16 eps=2.5
 ```
 
 ## **How to conduct statistical analysis and PSNR / MSE simulation over drift beta**
 
 ```
-python .\face_statistical_analysis.py dataset=agedb model_path=../models/facenet_keras.h5 batch_size=128 metadata=../dataset_meta/AgeDB_metadata.mat no_of_samples=188 no_of_pca_samples=188 pca_covariates_pkl=../data_collection/agedb_pca_covariates.pkl grouping_distance_type=DISTINCT tracking_uri="mlruns/" logger_name=facenet_statistical_analysis classifier=../models/agedb_voting_classifier_age.pkl experiment_id=1 pca_type=KernelPCA noise_error=0 image_error=0 drift_type=incremental drift_beta=2 inference_images_pkl=../data_collection/agedb_inferences_facenet.pkl drift_synthesis_metrics=../data_collection/agedb_drift_beta_optimized.csv data_dir=../../../datasets/AgeDB input_shape=-1,160,160,3 model=FaceNetKeras function_type=morph denoise_type=opencv_denoising
+python3.7 .\face_statistical_analysis.py dataset=agedb model_path=../models/facenet_keras.h5 batch_size=128 metadata=../dataset_meta/AgeDB_metadata.mat no_of_samples=188 no_of_pca_samples=188 pca_covariates_pkl=../data_collection/agedb_pca_covariates.pkl grouping_distance_type=DISTINCT tracking_uri="mlruns/" logger_name=facenet_statistical_analysis classifier=../models/agedb_voting_classifier_age.pkl experiment_id=1 pca_type=KernelPCA noise_error=0 image_error=0 drift_type=incremental drift_beta=2 inference_images_pkl=../data_collection/agedb_inferences_facenet.pkl drift_synthesis_metrics=../data_collection/agedb_drift_beta_optimized.csv data_dir=../../../datasets/AgeDB input_shape=-1,160,160,3 model=FaceNetKeras function_type=morph denoise_type=opencv_denoising
 ```
 
 ## **How to perform face verification with similarity**
 
 ```
-python .\face_verification_with_similarity.py dataset=agedb model_path=../models/facenet_keras.h5 batch_size=128 metadata=../dataset_meta/AgeDB_metadata.mat unique_name_count=30 no_of_samples=14157 tracking_uri="mlruns/" logger_name=facenet_without_aging_keras input_shape=-1,160,160,3 data_dir="../../../datasets/AgeDB" model=FaceNetKeras source_type=file experiment_id=0 data_dir=../../../datasets/AgeDB
+python3.7 .\face_verification_with_similarity.py dataset=agedb model_path=../models/facenet_keras.h5 batch_size=128 metadata=../dataset_meta/AgeDB_metadata.mat unique_name_count=30 no_of_samples=14157 tracking_uri="mlruns/" logger_name=facenet_without_aging_keras input_shape=-1,160,160,3 data_dir="../../../datasets/AgeDB" model=FaceNetKeras source_type=file experiment_id=0 data_dir=../../../datasets/AgeDB
 ```
 
 ## **How to perform face verification using perceptrons**
 
 ```
-python .\face_verification.py dataset=agedb model_path=../models/facenet_keras.h5 batch_size=128 metadata=../dataset_meta/AgeDB_metadata.mat unique_name_count=30 no_of_samples=14157 tracking_uri="mlruns/" logger_name=facenet_without_aging_keras experiment_id=2 input_shape=-1,160,160,3 data_dir="../../../datasets/AgeDB" data_collection_pkl=../data_collection/detection_agedb_inferences_baseline_cvae_9k.pkl model=FaceNetKeras source_type=ordered_metadata experiment_id=0 data_dir=../../../datasets/AgeDB face_id=25
+python3.7 .\face_verification.py dataset=agedb model_path=../models/facenet_keras.h5 batch_size=128 metadata=../dataset_meta/AgeDB_metadata.mat unique_name_count=30 no_of_samples=14157 tracking_uri="mlruns/" logger_name=facenet_without_aging_keras experiment_id=2 input_shape=-1,160,160,3 data_dir="../../../datasets/AgeDB" data_collection_pkl=../data_collection/detection_agedb_inferences_baseline_cvae_9k.pkl model=FaceNetKeras source_type=ordered_metadata experiment_id=0 data_dir=../../../datasets/AgeDB face_id=25
 ```
 
 ## **How to create Face Aging concept drift `Drift table` using Statistical Face Model by PCA**
 
 ```
-python .\facenet_with_aging_cacd.py dataset=cacd model_path=../models/facenet_keras.h5 batch_size=128 metadata=../dataset_meta/celebrity2000_meta.mat no_of_samples=320 no_of_pca_samples=320 grouping_distance_type=DISTINCT tracking_uri="mlruns/" logger_name=facenet_with_aging classifier=../models/facenet_agedb_voting_classifier_age_train_younger_latest_3.pkl experiment_id=0 pca_type=KernelPCA noise_error=0 mode=image_reconstruction drift_beta=1.0 covariates_beta=0 data_dir=../../../datasets/CACD2000_processed drift_synthesis_filename=../data_collection/facenet_cacd_drift_synthesis_filename-range-of-beta-latest-1.csv drift_source_filename=../data_collection/facenet_cacd_drift_evaluate_metrics_difference.csv model=FaceNetKeras input_shape=-1,160,160,3 function_type=morph drift_type=incremental
+python3.7 .\facenet_with_aging_cacd.py dataset=cacd model_path=../models/facenet_keras.h5 batch_size=128 metadata=../dataset_meta/celebrity2000_meta.mat no_of_samples=320 no_of_pca_samples=320 grouping_distance_type=DISTINCT tracking_uri="mlruns/" logger_name=facenet_with_aging classifier=../models/facenet_agedb_voting_classifier_age_train_younger_latest_3.pkl experiment_id=0 pca_type=KernelPCA noise_error=0 mode=image_reconstruction drift_beta=1.0 covariates_beta=0 data_dir=../../../datasets/CACD2000_processed drift_synthesis_filename=../data_collection/facenet_cacd_drift_synthesis_filename-range-of-beta-latest-1.csv drift_source_filename=../data_collection/facenet_cacd_drift_evaluate_metrics_difference.csv model=FaceNetKeras input_shape=-1,160,160,3 function_type=morph drift_type=incremental
 ```
 
 ## **How to create Voting Classifier Models using `Age Drifting` scenario and `Non Age Drifting Scenario` (Classification)**
 
 ```
-python .\facenet_with_two_classifiers.py dataset=cacd model_path=../models/facenet_keras.h5 batch_size=128 metadata=../dataset_meta/celebrity2000_meta.mat tracking_uri="mlruns/" logger_name=facenet_model_with_two_classifiers_latest_3 collect_for=age_drifting experiment_id=0 classifier_test_younger=../models/facenet_cacd_voting_classifier_age_test_younger_latest_3.pkl model=FaceNetKeras input_shape=-1,160,160,3 data_dir="../../../datasets/CACD2000_processed" drift_evaluate_metrics_test_younger=../data_collection/facenet_cacd_drift_evaluate_metrics_test_younger_latest_3.csv drift_evaluate_metrics_train_younger=../data_collection/facenet_cacd_drift_evaluate_metrics_train_younger_latest_3.csv classifier_train_younger=../models/facenet_cacd_voting_classifier_age_train_younger_latest_3.pkl no_of_samples=15000 
+python3.7 .\facenet_with_two_classifiers.py dataset=cacd model_path=../models/facenet_keras.h5 batch_size=128 metadata=../dataset_meta/celebrity2000_meta.mat tracking_uri="mlruns/" logger_name=facenet_model_with_two_classifiers_latest_3 collect_for=age_drifting experiment_id=0 classifier_test_younger=../models/facenet_cacd_voting_classifier_age_test_younger_latest_3.pkl model=FaceNetKeras input_shape=-1,160,160,3 data_dir="../../../datasets/CACD2000_processed" drift_evaluate_metrics_test_younger=../data_collection/facenet_cacd_drift_evaluate_metrics_test_younger_latest_3.csv drift_evaluate_metrics_train_younger=../data_collection/facenet_cacd_drift_evaluate_metrics_train_younger_latest_3.csv classifier_train_younger=../models/facenet_cacd_voting_classifier_age_train_younger_latest_3.pkl no_of_samples=15000 
 ```
 
 ## **How to conduct Mahalanobis T2 Statistical Analysis**
 
 ```
-python .\facenet_with_T2_Mahalanobis.py dataset=agedb model_path=../models/facenet_keras.h5 batch_size=128 metadata=../dataset_meta/AgeDB_metadata.mat no_of_samples=239 tracking_uri="mlruns/" logger_name=facenet_model_with_T2_Mahalanobis_latest collect_for=age_drifting experiment_id=0 model=FaceNetKeras input_shape=-1,160,160,3 data_dir="../../../datasets/AgeDB" drift_synthesis_metrics=../data_collection/16.07.2022_two_classifiers_facenet/facenet_agedb_drift_evaluate_difference.csv t2_observation_ucl=../data_collection/t2_observation_ucl.csv
+python3.7 .\facenet_with_T2_Mahalanobis.py dataset=agedb model_path=../models/facenet_keras.h5 batch_size=128 metadata=../dataset_meta/AgeDB_metadata.mat no_of_samples=239 tracking_uri="mlruns/" logger_name=facenet_model_with_T2_Mahalanobis_latest collect_for=age_drifting experiment_id=0 model=FaceNetKeras input_shape=-1,160,160,3 data_dir="../../../datasets/AgeDB" drift_synthesis_metrics=../data_collection/16.07.2022_two_classifiers_facenet/facenet_agedb_drift_evaluate_difference.csv t2_observation_ucl=../data_collection/t2_observation_ucl.csv
 ```
 
 ## **How to conduct Runs Test with face images using MST (Minimum Spanning Tree)**
 
 ```
-python .\facenet_with_ww_mst.py dataset=agedb model_path=../models/facenet_keras.h5 batch_size=128 metadata=../dataset_meta/AgeDB_metadata.mat no_of_samples=245 tracking_uri="mlruns/" logger_name=facenet_model_with_ww_mst_latest collect_for=age_drifting experiment_id=2 model=FaceNetKeras input_shape=-1,160,160,3 data_dir="../../../datasets/AgeDB" drift_synthesis_metrics=../data_collection/16.07.2022_two_classifiers_facenet/facenet_agedb_drift_evaluate_metrics_train_younger_late_Copy.csv 
+python3.7 .\facenet_with_ww_mst.py dataset=agedb model_path=../models/facenet_keras.h5 batch_size=128 metadata=../dataset_meta/AgeDB_metadata.mat no_of_samples=245 tracking_uri="mlruns/" logger_name=facenet_model_with_ww_mst_latest collect_for=age_drifting experiment_id=2 model=FaceNetKeras input_shape=-1,160,160,3 data_dir="../../../datasets/AgeDB" drift_synthesis_metrics=../data_collection/16.07.2022_two_classifiers_facenet/facenet_agedb_drift_evaluate_metrics_train_younger_late_Copy.csv 
 ```
 

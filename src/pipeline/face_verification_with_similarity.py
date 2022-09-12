@@ -2,7 +2,7 @@ from context import Constants, Args
 import tensorflow as tf
 from dataloaders import DataGenerator
 from datasets import CACD2000Dataset, FGNETDataset, AgeDBDataset
-from experiment.facenet_without_aging import FaceNetWithoutAgingExperiment
+from experiment.face_without_aging import FaceNetWithoutAgingExperiment
 from experiment.face_classification_by_images import FaceClassificationByImages
 from experiment.model_loader import FaceNetKerasModelLoader, FaceRecognitionBaselineKerasModelLoader
 import whylogs

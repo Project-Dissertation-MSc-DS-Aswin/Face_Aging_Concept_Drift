@@ -2,7 +2,7 @@ import pickle
 import os
 from preprocessing.facenet import l2_normalize, prewhiten
 from experiment.model_loader import get_augmented_datasets, preprocess_data_facenet_without_aging
-from experiment.facenet_with_classifier import FaceNetWithClassifierExperiment
+from experiment.face_with_classifier import FaceNetWithClassifierExperiment
 from experiment.context import base_estimators_voting_classifier_face_recognition
 from evaluation.distance import cosine, euclidean, face_distance
 import tensorflow as tf
