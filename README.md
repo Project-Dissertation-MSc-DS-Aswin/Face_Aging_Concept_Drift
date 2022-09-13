@@ -246,6 +246,38 @@ docker-compose exec face_aging_concept_drift wget https://project-dissertation.s
 |      4 |        1 | 001A14.JPG | 14 |
 ```
 |_📂 src
+       |_📁 models
+              |_📄 16.07.2022_two_classifiers.zip
+              |_📄 all_ml_models.zip
+              |_📄 CACD_MAE_4.59.pth
+              |_📄 cvae_face_recognition_model.zip
+              |_📄 facenet_keras.h5
+              |_📄 mnist_epoch10.hdf5
+              |_📄 mnist_epoch2.hdf5
+              |_📄 mnist_epoch5.hdf5
+              |_📄 vit_face_recognition_model.zip
+
+|_📄 16.07.2022_two_classifiers.zip
+       - This zip file contains two Machine Learning models derived from `FaceNetKeras` and `FaceRecognitionBaselineKeras` using the two_classifiers method
+
+|_📄 all_ml_models.zip
+       - This zip file contains Machine Learning models derived in the `Age Drifting Scenario` with one model usign randomised ages and another trained with younger faces
+
+|_📄 cvae_face_recognition_model.zip
+       - This is a model trained by adding target labels in latent space instead of latent distribution to demonstrate the improvement of accuracy from 60 - 68% to 94%
+
+|_📄 vit_face_recognition_model.zip
+       - This is a model trained by adding target labels in latent distribution that shows an accuracy of 94% in ordered target vectors but reduces to 91% in randomised target vectors
+
+|_📄 facenet_keras.h5
+       - This is a pre-trained model obtained from FaceNetKeras (original model from FaceNet converted to keras format)
+
+|_📄 mnist_epoch10.hdf5
+|_📄 mnist_epoch2.hdf5
+|_📄 mnist_epoch5.hdf5
+       - These are MNIST based models trained with spochs 2, 5 and 10
+
+|_📂 src
        |_📁 data_collection
               |_📁 16.07.2022_two_classifiers_baseline
               |_📁 16.07.2022_two_classifiers_facenet
