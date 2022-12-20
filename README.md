@@ -37,12 +37,12 @@ wget https://project-dissertation.s3.eu-west-2.amazonaws.com/vit_face_recognitio
 ```
 
 ```
-unzip -P ByrMAP@15 src/models/all_models.zip src/models
+unzip -P ********* src/models/all_models.zip src/models
 cp -Rf src/models/all_models/*.pkl src/models
 ```
 
 ```
-unzip -P ByrMAP@15 src/models/16.07.2022_two_classifiers.zip src/models
+unzip -P ********* src/models/16.07.2022_two_classifiers.zip src/models
 cp -Rf src/models/16.07.2022_two_classifiers/*.pkl src/models
 ```
 
